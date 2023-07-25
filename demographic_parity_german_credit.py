@@ -2,6 +2,7 @@ from aif360.sklearn.datasets import fetch_german
 
 import numpy as np
 import pandas as pd
+import os
 from sympy import *
 
 from sklearn.compose import ColumnTransformer
@@ -43,7 +44,7 @@ def demographic_parity(samples, y, attribute):
 
     n = len(samples)
     # if the auditor doesn't test all subpopulations, we set that the demographic parity is null
-    if not (0 < y[samples[attribute] == 1].sum() < n):
+    if not (0 < y[samples[attribute] == 1].sum() < n) or not (0 < y[samples[attribute] == 0].sum() < n):
         return 0
 
     prob_y_given_attribute_1 = y[samples[attribute] == 1].mean()  # P(y=1|attribute=1)
@@ -274,14 +275,14 @@ def OSNC(samples, n, black_box, attribute, prob_dict, random_seed=42):
     derivative = evaluation.diff(a)
     s = solve(derivative, a)
     if s != []:
-        alpha = int(s[0]*n)
+        alpha = float(s[0])
         # print(f"Optimal alpha for attribute {attribute}: {s[0]}")
         
         # Sample alpha samples from C0 and n-alpha samples from C1
         samples_0 = samples[samples[attribute] == 0]
         samples_1 = samples[samples[attribute] == 1]
-        subset_0 = samples_0.sample(n=n-alpha, random_state=random_state)
-        subset_1 = samples_1.sample(n=alpha, random_state=random_state)
+        subset_0 = samples_0.sample(n=int(n*(1.0-alpha)), random_state=random_state)
+        subset_1 = samples_1.sample(n=int(n*alpha), random_state=random_state)
 
         subset = pd.concat([subset_0, subset_1], ignore_index=True)
 
@@ -326,7 +327,7 @@ def OSC(samples, n, black_box, attribute, prob_dict, random_seed=42):
     random_state = random_seed if attribute == 'age' else random_seed*100
 
     # P0, P1 = pYC00, pYC01 for C0
-    # P0, P1 = pYC10, pYC11 for C1
+    # P2, P3 = pYC10, pYC11 for C1
     P0 = prob_dict[attribute][f'prob_y_given_{attribute}_0']
     P1 = prob_dict[attribute][f'prob_y_given_{attribute}_1']
 
@@ -335,7 +336,7 @@ def OSC(samples, n, black_box, attribute, prob_dict, random_seed=42):
     P3 = prob_dict[attribute2][f'prob_y_given_{attribute2}_1']
 
     # Finding the optimal strategy by solving the Equation (?) using sympy. Is it always equivalent to proportionate stratified sampling ??
-    p1, p0, m, a = symbols("p1 p0 n a")
+    p1, p0, m, a = symbols("p1 p0 m a")
     espilon = 2*sqrt((p1*(1-p1))/(a*m)) + 2*sqrt((p0*(1-p0))/((1-a)*m))
     evaluation = espilon.subs(m, n)
     evaluation = evaluation.subs(p0, P0)
@@ -346,8 +347,8 @@ def OSC(samples, n, black_box, attribute, prob_dict, random_seed=42):
         alpha = float(s[0])
         # print(f"Optimal alpha for attribute {attribute}: {s[0]}")
 
-        # Solve alpha for the other attribute
-        p1, p0, m, a = symbols("p1 p0 n a")
+        # Solve for the other attribute
+        p1, p0, m, a = symbols("p1 p0 m a")
         espilon = 2*sqrt((p1*(1-p1))/(a*m)) + 2*sqrt((p0*(1-p0))/((1-a)*m))
         evaluation = espilon.subs(m, n)
         evaluation = evaluation.subs(p0, P2)
@@ -365,13 +366,13 @@ def OSC(samples, n, black_box, attribute, prob_dict, random_seed=42):
             
             # Check if there are enough samples for each attribute
             if len(samples_0_0) < int((1-beta)*(1-alpha)*n):
-                raise Exception(f"Not enough samples for the combination required {int((1-beta)*(1-alpha)*n)}, having {len(samples_0_0)}")
+                raise Exception(f"Not enough samples for the combination: required {int((1-beta)*(1-alpha)*n)}, having {len(samples_0_0)}")
             elif len(samples_0_1) < int(beta*(1-alpha)*n):
-                raise Exception(f"Not enough samples for the combination required {int(beta*(1-alpha)*n)}, having {len(samples_0_1)}")
+                raise Exception(f"Not enough samples for the combination: required {int(beta*(1-alpha)*n)}, having {len(samples_0_1)}")
             elif len(samples_1_0) < int((1-beta)*alpha*n):
-                raise Exception(f"Not enough samples for the combination required {int((1-beta)*alpha*n)}, having {len(samples_1_0)}")
+                raise Exception(f"Not enough samples for the combination: required {int((1-beta)*alpha*n)}, having {len(samples_1_0)}")
             elif len(samples_1_1) < int(beta*alpha*n):
-                raise Exception(f"Not enough samples for the combination required {int(beta*alpha*n)}, having {len(samples_1_1)}")
+                raise Exception(f"Not enough samples for the combination: required {int(beta*alpha*n)}, having {len(samples_1_1)}")
             
             subset_1_1 = samples_1_1.sample(n=int(beta*alpha*n), random_state=random_state)
             subset_1_0 = samples_1_0.sample(n=int((1-beta)*alpha*n), random_state=random_state)
@@ -389,12 +390,12 @@ def OSC(samples, n, black_box, attribute, prob_dict, random_seed=42):
         raise Exception("No solution found for optimal sampling alpha")
 
 if __name__ == "__main__":
-    random_seed = 40
+    random_seed = 90
     exp_id = np.random.randint(100000)
     print("exp_id:", exp_id)
     np.random.seed(random_seed)
 
-    X, y, cat_ix, num_ix = load_dataset()
+    X, y, cat_ix, num_ix = load_dataset() # X is pandas.DataFrame, y is numpy.ndarray
 
     #########################################
     # Calculate the probabilities
@@ -495,7 +496,7 @@ if __name__ == "__main__":
     # Audit the model
 
     B = [r*10 for r in range(3, 16, 3)]
-    Nrepet= 10 ## number of repetitions per sample level
+    Nrepet= 100 ## number of repetitions per sample level
 
     # create a black-box function that runs the best model on the audit data
     black_box = lambda samples: BlackBox(samples, ct, best_model)
@@ -591,4 +592,9 @@ if __name__ == "__main__":
 
     handles, labels = axs[-1][-1].get_legend_handles_labels()
     lgd = axs[-1][0].legend(handles, labels, loc='center', bbox_to_anchor=(0.2,-0.4),  ncol=5)
-    plt.savefig('results.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')
+    
+    # Check if results directory exists or else create one
+    if not os.path.exists('./results'):
+        os.makedirs('./results')
+
+    plt.savefig(f'./results/results_{random_seed}.pdf', bbox_extra_artists=(lgd,), bbox_inches='tight')

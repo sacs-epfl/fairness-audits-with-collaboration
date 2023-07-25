@@ -185,7 +185,7 @@ def OSC(n, C):
         P2, P3 = pYC01, pYC00
     # Finding the optimal strategy by solving the Equation (?) using sympy.
     p1, p0, m, a = symbols("p1 p0 n a")
-    espilon = 2*sqrt((p1*(1-p1))/(a*m)) + 2*sqrt((p0*(1-p0))/((1-a)*m))
+    espilon = 2*sqrt((p1*(1-p1))/(a*m)) + 2*sqrt((p0*(1-p0))/((1-a)*m)) # WRONG !
     evaluation = espilon.subs(m, n)
     evaluation = evaluation.subs(p0, P0)
     evaluation = evaluation.subs(p1, P1)
