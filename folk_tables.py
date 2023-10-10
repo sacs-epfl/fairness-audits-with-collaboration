@@ -2,15 +2,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from folktables import ACSDataSource, ACSPublicCoverage
+import matplotlib.pyplot as plt
 
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import GradientBoostingClassifier
-import pickle
-
-LOAD_SAVED_MODEL = False
-SAVE_MODEL = False
-
+protected_attributes = ['SEX','DIS','NATIVITY','DEAR',
+            'DEYE','MIG','MIL','AGEP','DREM','MAR']
+    
 def load_dataset():
     # load the pandas data frames
     features = pd.read_csv('./my_data/features.csv')
@@ -58,47 +54,152 @@ def demographic_parity(samples, y, attribute):
     demographic_parity_attribute = abs(prob_y_given_attribute_1 - prob_y_given_attribute_0)
     return demographic_parity_attribute
 
+def SU(X, y, n, attribute, random_seed=42):
+
+    assert attribute in protected_attributes, "Attribute not supported"
+
+    # Get index of attribute in protected_attributes
+    index = protected_attributes.index(attribute)
+    random_state = random_seed + index
+    
+    subset = X.sample(n=n, random_state=random_state)
+    subset_y = y.loc[subset.index]
+
+    return subset, subset_y
+
+def error_DP(X, y, attribute, ground_truth_dp):
+    return np.abs(demographic_parity(X, y, attribute) - ground_truth_dp[attribute])
+
 if __name__ == "__main__":
-    random_seed = 42
+    random_seed = 46
 
     #########################################
-    # Model training and evaluation
+    # Calculate ground truth demographic parity
     X, y = load_dataset()
 
-    # split X and y into train, test and audit splits of 45%, 5% and 50% respectively
-    X_train, X_audit, y_train, y_audit = train_test_split(X, y, test_size=0.5, random_state=random_seed)
-    X_train, X_test, y_train, y_test = train_test_split(X_train, y_train, test_size=0.1, random_state=random_seed)
-
-    # print the number of samples in each split
-    print("Number of samples in training split: {}".format(len(X_train)))
-    print("Number of samples in test split: {}".format(len(X_test)))
-    print("Number of samples in audit split: {}".format(len(X_audit)))
-
-    if LOAD_SAVED_MODEL:
-        model = pickle.load(open(f'./my_data/model_{random_seed}.pkl', 'rb'))
-    else:
-        model = GradientBoostingClassifier(loss='exponential', n_estimators=5, max_depth=5)
-        model.fit(X_train, y_train.values.ravel())
-    
-    y_pred = model.predict(X_test)
-    model_perf = accuracy_score(y_test, y_pred)
-    print("Model accuracy: {}".format(model_perf))
-
-    # Save the model
-    if not LOAD_SAVED_MODEL and SAVE_MODEL:
-        pickle.dump(model, open(f'./my_data/model_{random_seed}.pkl', 'wb'))
-
-    protected_attributes = ['SEX','DIS','NATIVITY','DEAR',
-            'DEYE','MIG','MIL','AGEP','DREM','MAR']
-    
-    # Calculate ground truth demographic parity for the model
     ground_truth_dp = dict()
-    y_pred = model.predict(X)
     for attr in protected_attributes:
         dp_o = demographic_parity(X, y, attr)
         print("Demographic parity of the original dataset on {}: {:.3f}".format(attr, dp_o))
-        
-        dp = demographic_parity(X, y_pred, attr)
-        ground_truth_dp[attr] = dp
-        print("Demographic parity of the model on {}: {:.3f}".format(attr, dp), "\n---\n")
+        ground_truth_dp[attr] = dp_o
+    
+    #########################################
+    # Audit the model
 
+    strategies = [[0, SU]]
+    budgets = list(range(10000, 100001, 30000))
+    budgets = [100000*5]
+    Nrepeat = 10
+    results = dict()
+    for k, attr in enumerate(protected_attributes):
+        results[attr] = dict()
+        for i, strat in strategies:
+            results[attr][i] = {b:[] for b in budgets}
+    
+    print('================== Running single strategies ==================')
+    # i is strategy index
+    for i, strat in strategies:
+        # k is agent index (i.e. also attr index)
+        print(f'Running strategy {strat.__name__} {i+1}/{len(strategies)}')
+
+        for k, attr in enumerate(protected_attributes):
+            print(f'Running attribute {attr} {k+1}/{len(protected_attributes)}') 
+
+            for b in budgets:
+                print(f'Running budget {b}')
+
+                for r in range(Nrepeat):
+                    # Get a subset of the data
+                    X_sampled, y_sampled = strat(X, y, b, attr, random_seed=random_seed*10*(r+1))
+
+                    # Calculate error
+                    error_dp = error_DP(X_sampled, y_sampled, attr, ground_truth_dp)
+
+                    # Store error
+                    results[attr][i][b].append([X_sampled, y_sampled, error_dp])
+
+                    print(f'Error for {attr}, budget {b} is {error_dp}')
+
+    print('================== Running joint strategies ==================')
+
+    joint_results = dict()
+    # initialize joint results
+    for i, strat in strategies:
+        joint_results[i] = dict()
+        for j in range(len(protected_attributes)):
+            for k in range(j, len(protected_attributes)):
+                attr1 = protected_attributes[j]
+                attr2 = protected_attributes[k]
+                joint_results[i][(attr1, attr2)] = {b:[] for b in budgets}
+                joint_results[i][(attr2, attr1)] = {b:[] for b in budgets}
+
+    # evaluate results for the joint strategy
+    for i, strat in strategies:
+        print(f'Running strategy {strat.__name__} {i+1}/{len(strategies)}')
+
+        for j in range(len(protected_attributes)):
+            for k in range(j, len(protected_attributes)):
+                
+                print(f'Running attributes {j} and {k}')
+
+                attr1 = protected_attributes[j]
+                attr2 = protected_attributes[k]
+
+                for b in budgets:
+                    print(f'Running budget {b}')
+                
+                    for r in range(Nrepeat):
+                        # print(f'Running repetition {r+1}/{Nrepet}')
+                        X1, y1, e1 = results[attr1][i][b][r]
+                        X2, y2, e2 = results[attr2][i][b][r]
+                        
+                        X_tot = pd.concat([X1, X2], ignore_index=True)
+                        y_tot = pd.concat([y1, y2], ignore_index=True)
+                        
+                        e1_aposteriori = error_DP(X_tot, y_tot, attr1, ground_truth_dp)
+                        e2_aposteriori = error_DP(X_tot, y_tot, attr2, ground_truth_dp)
+
+                        joint_results[i][(attr1, attr2)][b].append(e1/e1_aposteriori)
+                        joint_results[i][(attr2, attr1)][b].append(e2/e2_aposteriori)
+
+    
+
+    # plot the results
+
+    # Create an empty 2D array to store the error values
+    num_attributes = len(protected_attributes)
+    error_matrix = np.zeros((num_attributes, num_attributes))
+    budget = budgets[-1]
+
+    # Fill the error_matrix with error values from your joint_results dictionary
+    for i, strat in strategies:
+        for j in range(num_attributes):
+            for k in range(num_attributes):
+                attr1 = protected_attributes[j]
+                attr2 = protected_attributes[k]
+                # Calculate the average error for the combination (attr1, attr2)
+                avg_error = np.mean(joint_results[i][(attr1, attr2)][budget])
+                error_matrix[j, k] = avg_error
+            
+    # Create a figure and axis
+    fig, ax = plt.subplots()
+
+    # Create the heatmap
+    cax = ax.imshow(error_matrix, cmap='viridis', interpolation='nearest')
+
+    # Add a colorbar
+    cbar = fig.colorbar(cax)
+
+    # Set axis labels and title
+    ax.set_xticks(np.arange(num_attributes))
+    ax.set_yticks(np.arange(num_attributes))
+    ax.set_xticklabels(protected_attributes)
+    ax.set_yticklabels(protected_attributes)
+    ax.set_xlabel('Attribute 1')
+    ax.set_ylabel('Attribute 2')
+    ax.set_title('Error for Attribute Combinations')
+
+    plt.xticks(np.arange(num_attributes), protected_attributes, rotation=45, ha='right')
+
+    # Show the plot
+    plt.savefig(f'results/heatmap_{random_seed}_{budgets[0]}.png')
