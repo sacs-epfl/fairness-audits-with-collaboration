@@ -3,3 +3,5 @@
 data
 my_data
 folktables
+__pycache__
+results
