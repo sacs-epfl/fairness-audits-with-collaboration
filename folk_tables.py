@@ -67,8 +67,8 @@ def SS(X, y, n, attribute, random_seed=42):
         y_0 = y.loc[X_0.index]
     
     sub_n = n//2
-    print(f'Len of X_1: {len(X_1)}')
-    print(f'Len of X_0: {len(X_0)}')
+    # print(f'Len of X_1: {len(X_1)}')
+    # print(f'Len of X_0: {len(X_0)}')
     subset_1 = X_1.sample(n=sub_n, random_state=random_state)
     subset_1_y = y_1.loc[subset_1.index]
     subset_0 = X_0.sample(n=sub_n, random_state=random_state)
