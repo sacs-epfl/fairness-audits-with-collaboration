@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod, ABC
+from itertools import combinations
 from typing import List, Dict
 
 import pandas as pd
@@ -15,6 +16,49 @@ class Dataset(ABC):
         self.protected_attributes: List[str] = []
         self.ground_truth_dps: Dict[str, float] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.subspace_features_probabilities = None
+        self.subspace_labels_probabilities = None
+
+    def compute_subspace_probabilities(self):
+        n = len(self.protected_attributes)
+
+        all_probs = dict()
+        all_ys = dict()
+
+        for k in range(1, n + 1):
+
+            self.logger.debug(f'Working on k={k}')
+            all_probs[k] = dict()
+            all_ys[k] = dict()
+
+            agent_combinations_list = list(combinations(range(n), k))
+
+            for agent_combination in agent_combinations_list:
+                agent_comb_str = ''.join([str(elem) for elem in agent_combination])
+
+                all_probs[k][agent_comb_str] = dict()
+                all_ys[k][agent_comb_str] = dict()
+
+                total_strings = 2 ** (k)
+                binary_strings = [format(i, f'0{k}b') for i in range(total_strings)]
+
+                attrs = [self.protected_attributes[i] for i in agent_combination]
+                self.logger.debug(f'Working on {attrs}')
+                for binary_string in binary_strings:
+
+                    pairs = [(attrs[i], int(binary_string[i])) for i in range(k)]
+
+                    # Restore X_transformed that satisfies the binary string
+                    X_temp = self.features.copy()
+                    for attr, val in pairs:
+                        X_temp = X_temp[X_temp[attr] == val]
+                    y_tmp = self.labels.loc[X_temp.index]
+
+                    all_probs[k][agent_comb_str][binary_string] = len(X_temp) / len(self.features)
+                    all_ys[k][agent_comb_str][binary_string] = y_tmp.mean().item()
+
+        self.subspace_features_probabilities = all_probs
+        self.subspace_labels_probabilities = all_ys
 
     def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: int = 42):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
