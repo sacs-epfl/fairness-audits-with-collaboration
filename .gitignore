@@ -5,3 +5,6 @@ my_data
 folktables
 __pycache__
 results
+data/**
+.idea
+.DS_Store
