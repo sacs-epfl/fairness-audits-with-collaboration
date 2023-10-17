@@ -66,11 +66,13 @@ class Audit:
             for agent, sampled in enumerate(queries_per_agent):
                 attribute = self.dataset.protected_attributes[agent]
                 other_attributes = [attr for attr in self.dataset.protected_attributes if attr != attribute]
-                dp_error = demographic_parity_error_unbiased(
-                    x_all, y_all, attribute, self.dataset.subspace_features_probabilities,
-                    self.dataset.subspace_labels_probabilities, other_attributes,
-                    self.dataset.ground_truth_dps[attribute], self.dataset.protected_attributes)
-                #dp_error = demographic_parity_error(x_all, y_all, attribute, self.dataset.ground_truth_dps[attribute])
+                if self.args.unbias_mean:
+                    dp_error = demographic_parity_error_unbiased(
+                        x_all, y_all, attribute, self.dataset.subspace_features_probabilities,
+                        self.dataset.subspace_labels_probabilities, other_attributes,
+                        self.dataset.ground_truth_dps[attribute], self.dataset.protected_attributes)
+                else:
+                    dp_error = demographic_parity_error(x_all, y_all, attribute, self.dataset.ground_truth_dps[attribute])
                 self.results.append((self.args.seed, self.args.budget, agent, dp_error))
         else:
             raise RuntimeError("Collaboration strategy %s not implemented!", self.args.collaboration)

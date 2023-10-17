@@ -4,7 +4,8 @@ library(dplyr)
 dat1 <- read.csv("../../results/none_stratified_n2.csv")
 dat2 <- read.csv("../../results/aposteriori_stratified_n2.csv")
 dat3 <- read.csv("../../results/apriori_stratified_n2.csv")
-dat <- rbind(dat1, dat2, dat3)
+dat4 <- read.csv("../../results/apriori_stratified_n2_unbias.csv")
+dat <- rbind(dat1, dat2, dat3, dat4)
 dat <- dat[dat$agent == 0,]
 
 dat <- dat %>%
@@ -18,8 +19,8 @@ p <- ggplot(dat, aes(x=budget, y=dp_error_mean, shape=collaboration, group=colla
      geom_point() +
      #geom_errorbar(aes(ymin=dp_error_mean-sd, ymax=dp_error_mean+sd), width=.2, position=position_dodge(.9)) +
      theme_bw() +
-     theme(legend.position=c(0.7, 0.7), legend.box.background = element_rect(colour = "black")) +
+     theme(legend.position="top", legend.box.background = element_rect(colour = "black")) +
      xlab("Budget") +
      ylab("DP Error")
 
-ggsave("../../results/budget.pdf", p, width=4, height=3)
+ggsave("../../results/budget.pdf", p, width=5.7, height=3)

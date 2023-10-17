@@ -135,3 +135,6 @@ class Dataset(ABC):
     @abstractmethod
     def load_dataset(self):
         pass
+
+    def get_name(self) -> str:
+        return "unknown"
