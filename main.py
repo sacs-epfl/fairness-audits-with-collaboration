@@ -14,13 +14,10 @@ if __name__ == "__main__":
     orig_seed = args.seed
 
     results: List = []
-    for budget in range(100, 1100, 100):
-        args.budget = budget
-        args.seed = orig_seed
-        for exp_num in range(args.repetitions):
-            audit = Audit(args, get_dataset(args.dataset))
-            audit.run()
-            results += audit.results
-            args.seed += 1
+    for exp_num in range(args.repetitions):
+        audit = Audit(args, get_dataset(args.dataset))
+        audit.run()
+        results += audit.results
+        args.seed += 1
 
     write_results(args, results)

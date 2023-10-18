@@ -45,7 +45,7 @@ class Audit:
                     # Determine the collaborating agents
                     collab_agents = ["a%d" % agent_index for agent_index in range(self.args.agents) if agent_index != agent]
                     x_sampled, y_sampled = self.dataset.sample_coordinated_stratified(
-                        collab_agents, self.args.budget, attribute, self.args.seed)
+                        collab_agents, self.args.budget, attribute, self.args.seed * agent)
                 else:
                     raise RuntimeError("Sample strategy not supported!")
                 queries_per_agent.append((x_sampled, y_sampled))
