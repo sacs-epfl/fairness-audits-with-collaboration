@@ -6,13 +6,16 @@ dat2 <- read.csv("../../results/aposteriori_stratified_n2.csv")
 dat3 <- read.csv("../../results/apriori_stratified_n2.csv")
 dat4 <- read.csv("../../results/apriori_stratified_n2_unbias.csv")
 dat <- rbind(dat1, dat2, dat3, dat4)
-dat <- dat[dat$agent == 0,]
 
 dat <- dat %>%
   group_by(collaboration,sample,agents,budget,agent) %>%
   summarise(dp_error_mean = mean(dp_error), sd=sd(dp_error))
+print(dat, n=1000)
 
-print(dat)
+dat$agent <- factor(dat$agent,
+                    levels = unique(dat$agent),
+                    labels = paste0("Agent ", unique(dat$agent)))
+
 
 p <- ggplot(dat, aes(x=budget, y=dp_error_mean, shape=collaboration, group=collaboration, color=collaboration)) +
      geom_line() +
@@ -21,6 +24,7 @@ p <- ggplot(dat, aes(x=budget, y=dp_error_mean, shape=collaboration, group=colla
      theme_bw() +
      theme(legend.position="top", legend.box.background = element_rect(colour = "black")) +
      xlab("Budget") +
-     ylab("DP Error")
+     ylab("DP Error") +
+     facet_wrap(~ agent)
 
 ggsave("../../results/budget.pdf", p, width=5.7, height=3)
