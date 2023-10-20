@@ -9,10 +9,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--attributes", type=int, default=20)
 parser.add_argument("--rows", type=int, default=None)
+parser.add_argument("--prob-a0-appear", type=float, default=None)
 parser.add_argument("--bias", type=float, help="The bias on the first weights.", default=5)
 args = parser.parse_args()
 
 rand = random.Random(args.seed)
+generated_rows = set()
 
 weights = []
 for i in range(args.attributes):
@@ -27,11 +29,24 @@ labels = []
 num_rows = 2 ** args.attributes if args.rows is None else args.rows
 print("Will create a synthetic dataset with %d rows" % num_rows)
 rows_iter = range(2 ** args.attributes) if args.rows is None else rand.sample(range(2 ** args.attributes), args.rows)
+row_count = 0
 for row in rows_iter:
-    if row % 10000 == 0:
-        print("Created %d rows..." % row)
+    if row_count % 10000 == 0:
+        print("Created %d rows..." % row_count)
 
-    values = [int(c) for c in format(row, '#0%db' % (args.attributes + 2))[2:]]
+    if args.rows is not None and args.prob_a0_appear is not None:
+        if rand.random() < args.prob_a0_appear:
+            first_value = 0
+        else:
+            first_value = 1
+
+        # now generate the rest of the row
+        sample_row = rand.sample(range(2 ** (args.attributes - 1)), 1)[0]
+        sample_values = [int(c) for c in format(sample_row, '#0%db' % (args.attributes + 1))[2:]]
+        values = [first_value] + sample_values
+    else:
+        values = [int(c) for c in format(row, '#0%db' % (args.attributes + 2))[2:]]
+
     features.append(values)
 
     # Determine the output label
@@ -41,6 +56,7 @@ for row in rows_iter:
 
     y = 1 if rand.random() < tot else 0
     labels.append(y)
+    row_count += 1
 
 if not os.path.exists("data"):
     os.mkdir("data")
