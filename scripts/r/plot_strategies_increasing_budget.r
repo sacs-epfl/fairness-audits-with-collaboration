@@ -1,11 +1,7 @@
 library(ggplot2)
 library(dplyr)
 
-dat1 <- read.csv("../../results/none_stratified_n2.csv")
-dat2 <- read.csv("../../results/aposteriori_stratified_n2.csv")
-dat3 <- read.csv("../../results/apriori_stratified_n2.csv")
-#dat4 <- read.csv("../../results/apriori_stratified_n2_unbias.csv")
-dat <- rbind(dat1, dat2, dat3)
+dat <- read.csv("../../results/folktables_stratified_n2.csv")
 
 dat <- dat %>%
   group_by(collaboration,sample,agents,budget,agent) %>%
