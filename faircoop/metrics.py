@@ -13,7 +13,7 @@ def demographic_parity_error(sampled_features, sampled_labels, attribute, ground
     return np.abs(demographic_parity(sampled_features, sampled_labels, attribute) - ground_truth_dp)
 
 
-def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes):
+def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
     n_attrs = len(other_attrs)
     n_subspaces = 2 ** n_attrs
 
@@ -65,8 +65,7 @@ def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other
 
     for i, binary_string in enumerate(binary_strings):
         prob_subspace = all_probs[n_attrs][agent_ids][binary_string]
-        original_subspace_size = int(prob_subspace * 100000)  # there are 1000 data points in total
-        # TODO make sure the above number matches the number of rows in the dataset
+        original_subspace_size = int(prob_subspace * dataset_size)  # there are 1000 data points in total
         sampled_subspace_size = len(subspaces_1[i][0])
 
         extended_binary_string_1 = '1' + binary_string
@@ -88,10 +87,10 @@ def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other
 
 
 def demographic_parity_error_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, ground_truth_dp,
-                                      all_attributes):
+                                      all_attributes, dataset_size: int):
     if not other_attrs:
         return demographic_parity_error(features, labels, attr, ground_truth_dp), None
     else:
         dp_mean, dp_std = demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs,
-                                                      all_attributes)
+                                                      all_attributes, dataset_size)
         return np.abs(dp_mean - ground_truth_dp).item()

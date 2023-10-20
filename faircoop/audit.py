@@ -43,7 +43,7 @@ class Audit:
                         self.args.budget, attribute, self.args.seed)
                 elif self.args.collaboration == "apriori":
                     # Determine the collaborating agents
-                    collab_agents = ["a%d" % agent_index for agent_index in range(self.args.agents) if agent_index != agent]
+                    collab_agents = [self.dataset.protected_attributes[agent_index] for agent_index in range(self.args.agents) if agent_index != agent]
                     x_sampled, y_sampled = self.dataset.sample_coordinated_stratified(
                         collab_agents, self.args.budget, attribute, self.args.seed * agent)
                 else:
@@ -70,7 +70,8 @@ class Audit:
                     dp_error = demographic_parity_error_unbiased(
                         x_all, y_all, attribute, self.dataset.subspace_features_probabilities,
                         self.dataset.subspace_labels_probabilities, other_attributes,
-                        self.dataset.ground_truth_dps[attribute], self.dataset.protected_attributes)
+                        self.dataset.ground_truth_dps[attribute], self.dataset.protected_attributes,
+                        len(self.dataset.features))
                 else:
                     dp_error = demographic_parity_error(x_all, y_all, attribute, self.dataset.ground_truth_dps[attribute])
                 self.results.append((self.args.seed, self.args.budget, agent, dp_error))
