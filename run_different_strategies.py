@@ -44,12 +44,12 @@ if __name__ == "__main__":
     else:
         raise RuntimeError("Unknown dataset %s" % args.dataset)
 
-    for info in [("none", False, budgets), ("aposteriori", False, budgets), ("apriori", False, budgets), ("apriori", True, budgets)]:
+    for info in [("none", False, budgets), ("aposteriori", False, budgets), ("apriori", False, budgets)]:
         p = Process(target=run, args=(info, deepcopy(args)))
         p.start()
         processes.append(p)
 
-    print("Running %d processes..." % len(processes))
+    print("Running %d processes (budgets: %s)..." % (len(processes), budgets))
 
     for p in processes:
         p.join()
