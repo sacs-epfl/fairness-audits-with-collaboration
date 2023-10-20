@@ -11,13 +11,14 @@ from write_results import write_results
 
 logging.basicConfig(level=logging.INFO)
 
-def run(info: Tuple[str, bool], args):
+
+def run(info: Tuple[str, bool, List[int]], args):
     dataset = get_dataset(args.dataset)
     results: List = []
-    collaboration, should_unbias = info
+    collaboration, should_unbias, budgets = info
     if should_unbias:
         args.unbias_mean = True
-    for budget in range(100, 1100, 100):
+    for budget in budgets:
         args.budget = budget
         args.seed += budget * 10000
         args.collaboration = collaboration
@@ -35,7 +36,15 @@ if __name__ == "__main__":
     orig_seed = args.seed
 
     processes = []
-    for info in [("none", False), ("aposteriori", False), ("apriori", False), ("apriori", True)]:
+
+    if args.dataset == "synthetic":
+        budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+    elif args.dataset == "german_credit":
+        budgets = [50, 100, 150, 200, 250]
+    else:
+        raise RuntimeError("Unknown dataset %s" % args.dataset)
+
+    for info in [("none", False, budgets), ("aposteriori", False, budgets), ("apriori", False, budgets), ("apriori", True, budgets)]:
         p = Process(target=run, args=(info, deepcopy(args)))
         p.start()
         processes.append(p)
