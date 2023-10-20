@@ -15,18 +15,18 @@ logging.basicConfig(level=logging.INFO)
 def run(info: Tuple[str, bool, List[int]], args):
     dataset = get_dataset(args.dataset)
     results: List = []
-    collaboration, should_unbias, budgets = info
+    collaboration, should_unbias, budget = info
     if should_unbias:
         args.unbias_mean = True
-    for budget in budgets:
-        args.budget = budget
-        args.seed += budget * 10000
-        args.collaboration = collaboration
-        for exp_num in range(args.repetitions):
-            audit = Audit(args, dataset)
-            audit.run()
-            results += audit.results
-            args.seed += 1
+
+    args.budget = budget
+    args.seed += budget * 10000
+    args.collaboration = collaboration
+    for exp_num in range(args.repetitions):
+        audit = Audit(args, dataset)
+        audit.run()
+        results += audit.results
+        args.seed += 1
 
     write_results(args, results)
 
