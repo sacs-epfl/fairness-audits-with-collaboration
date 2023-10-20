@@ -7,7 +7,7 @@ from faircoop.dataset.dataset import Dataset
 
 class GermanCreditDataset(Dataset):
     def load_dataset(self):
-        self.logger.info("Loading synthetic dataset...")
+        self.logger.info("Loading German Credit dataset...")
         self.features = pd.read_csv(os.path.join("data", self.get_name(), "features.csv"))
         self.labels = pd.read_csv(os.path.join("data", self.get_name(), "labels.csv"))
         self.logger.info("German Credit dataset loaded (rows: %d)", len(self.features))

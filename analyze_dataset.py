@@ -9,7 +9,7 @@ if __name__ == "__main__":
     if not os.path.exists("results"):
         os.mkdir("results")
 
-    for dataset_name in ["synthetic", "german_credit"]:
+    for dataset_name in ["synthetic", "german_credit", "folktables"]:
         dataset = get_dataset(dataset_name)
         dataset.load_dataset()
 
@@ -28,3 +28,5 @@ if __name__ == "__main__":
             for attribute, dp in dataset.ground_truth_dps.items():
                 out_file.write("%s,%s,%f\n" % (dataset.get_name(), attribute, dp))
                 print("%s => %f" % (attribute, dp))
+
+        print("")

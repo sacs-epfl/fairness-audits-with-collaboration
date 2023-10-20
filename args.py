@@ -5,7 +5,7 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sample", type=str, default="stratified", choices=["uniform", "stratified"])
     parser.add_argument("--collaboration", type=str, default="none", choices=["none", "aposteriori", "apriori"])
-    parser.add_argument("--dataset", type=str, default="synthetic", choices=["synthetic", "german_credit"])
+    parser.add_argument("--dataset", type=str, default="synthetic", choices=["synthetic", "german_credit", "folktables"])
     parser.add_argument("--budget", type=int, default=100)
     parser.add_argument("--agents", type=int, default=2)
     parser.add_argument("--seed", type=int, default=42)

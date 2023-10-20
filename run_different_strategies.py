@@ -41,6 +41,8 @@ if __name__ == "__main__":
         budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
     elif args.dataset == "german_credit":
         budgets = [50, 100, 150, 200, 250]
+    elif args.dataset == "folktables":
+        budgets = [100]
     else:
         raise RuntimeError("Unknown dataset %s" % args.dataset)
 
