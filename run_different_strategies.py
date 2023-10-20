@@ -17,10 +17,9 @@ def run(info: Tuple[str, bool], args):
     collaboration, should_unbias = info
     if should_unbias:
         args.unbias_mean = True
-    orig_seed = args.seed
     for budget in range(100, 1100, 100):
         args.budget = budget
-        args.seed = orig_seed
+        args.seed += budget * 10000
         args.collaboration = collaboration
         for exp_num in range(args.repetitions):
             audit = Audit(args, dataset)
