@@ -1,4 +1,5 @@
 import logging
+import os
 from copy import deepcopy
 from multiprocessing.context import Process
 from typing import List, Tuple
@@ -52,7 +53,7 @@ if __name__ == "__main__":
             p = Process(target=run, args=((info[0], info[1], budget), deepcopy(args)))
             p.start()
             processes.append(p)
-            result_csv_files.append("%s_%s_n%d_b%d.csv" % (info[0], args.sample, args.agents, budget))
+            result_csv_files.append(os.path.join("results", "%s_%s_n%d_b%d.csv" % (info[0], args.sample, args.agents, budget)))
 
     print("Running %d processes (budgets: %s)..." % (len(processes), budgets))
 
@@ -60,5 +61,5 @@ if __name__ == "__main__":
         p.join()
 
     print("Processes done - combining results")
-    output_file_name = "%s_%s_n%d.csv" % (args.dataset, args.sample, args.agents)
+    output_file_name = os.path.join("results", "%s_%s_n%d.csv" % (args.dataset, args.sample, args.agents))
     merge_csv_files(result_csv_files, output_file_name)
