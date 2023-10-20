@@ -58,20 +58,20 @@ for row in rows_iter:
     labels.append(y)
     row_count += 1
 
-if not os.path.exists("data"):
-    os.mkdir("data")
+if not os.path.exists(os.path.join("..", "data")):
+    os.mkdir(os.path.join("..", "data"))
 
-if not os.path.exists(os.path.join("data", "synthetic")):
-    os.mkdir(os.path.join("data", "synthetic"))
+if not os.path.exists(os.path.join("..", "data", "synthetic")):
+    os.mkdir(os.path.join("..", "data", "synthetic"))
 
-with open(os.path.join("data", "synthetic", "features.csv"), "w") as out_file:
+with open(os.path.join("..", "data", "synthetic", "features.csv"), "w") as out_file:
     header_str = ",".join(["a%d" % i for i in range(args.attributes)])
     out_file.write(header_str + "\n")
     for row in range(num_rows):
         values_str = ",".join([("%d" % i) for i in features[row]])
         out_file.write(values_str + "\n")
 
-with open(os.path.join("data", "synthetic", "labels.csv"), "w") as out_file:
+with open(os.path.join("..", "data", "synthetic", "labels.csv"), "w") as out_file:
     out_file.write("Y\n")
     for row in range(num_rows):
         out_file.write("%d\n" % labels[row])
