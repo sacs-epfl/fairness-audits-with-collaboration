@@ -5,11 +5,13 @@ import os
 
 from faircoop.dataset import get_dataset
 
+DATASETS = ["synthetic", "german_credit", "folktables"]
+
 if __name__ == "__main__":
     if not os.path.exists("results"):
         os.mkdir("results")
 
-    for dataset_name in ["synthetic", "german_credit", "folktables"]:
+    for dataset_name in DATASETS:
         dataset = get_dataset(dataset_name)
         dataset.load_dataset()
 
