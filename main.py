@@ -18,6 +18,7 @@ if __name__ == "__main__":
         audit = Audit(args, get_dataset(args.dataset))
         audit.run()
         results += audit.results
-        args.seed += 1
+        if args.seed is not None:
+            args.seed += 1
 
     write_results(args, results)

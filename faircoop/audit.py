@@ -23,7 +23,7 @@ class Audit:
                                self.args.agents, len(self.dataset.protected_attributes))
 
     def run(self):
-        self.logger.info("Running audit with %s sampling and collaboration mode: %s (seed: %d)",
+        self.logger.info("Running audit with %s sampling and collaboration mode: %s (seed: %s)",
                          self.args.sample, self.args.collaboration, self.args.seed)
 
         queries_per_agent: List[Tuple[List, List]] = []
@@ -33,7 +33,7 @@ class Audit:
             if self.args.sample == "uniform":
                 if self.args.collaboration == "none":
                     x_sampled, y_sampled = self.dataset.sample_selfish_uniform(
-                        self.args.budget, attribute, self.args.seed)
+                        self.args.budget, attribute, random_seed=self.args.seed)
                 else:
                     raise RuntimeError("Sample strategy not supported!")
                 queries_per_agent.append((x_sampled, y_sampled))
@@ -44,8 +44,9 @@ class Audit:
                 elif self.args.collaboration == "apriori":
                     # Determine the collaborating agents
                     collab_agents = [self.dataset.protected_attributes[agent_index] for agent_index in range(self.args.agents) if agent_index != agent]
+                    random_seed = self.args.seed + agent * 10000000 if self.args.seed is not None else self.args.seed
                     x_sampled, y_sampled = self.dataset.sample_coordinated_stratified(
-                        collab_agents, self.args.budget, attribute, self.args.seed + agent * 10000000)
+                        collab_agents, self.args.budget, attribute, random_seed)
                 else:
                     raise RuntimeError("Sample strategy not supported!")
                 queries_per_agent.append((x_sampled, y_sampled))
@@ -57,7 +58,7 @@ class Audit:
                 attribute = self.dataset.protected_attributes[agent]
                 dp_error = demographic_parity_error(
                     x_sampled, y_sampled, attribute, self.dataset.ground_truth_dps[attribute])
-                self.results.append((self.args.seed, self.args.budget, agent, dp_error))
+                self.results.append((self.args.seed if self.args.seed is not None else 0, self.args.budget, agent, dp_error))
         elif self.args.collaboration in ["aposteriori", "apriori"]:
             # Combine all queries and then compute the DP error per agent
             # TODO assume all agents work together
@@ -74,6 +75,6 @@ class Audit:
                         len(self.dataset.features))
                 else:
                     dp_error = demographic_parity_error(x_all, y_all, attribute, self.dataset.ground_truth_dps[attribute])
-                self.results.append((self.args.seed, self.args.budget, agent, dp_error))
+                self.results.append((self.args.seed if self.args.seed is not None else 0, self.args.budget, agent, dp_error))
         else:
             raise RuntimeError("Collaboration strategy %s not implemented!", self.args.collaboration)

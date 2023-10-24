@@ -21,22 +21,21 @@ def run(info: Tuple[str, bool, List[int]], args):
         args.unbias_mean = True
 
     args.budget = budget
-    args.seed += budget * 10000
+    if args.seed is not None:
+        args.seed += budget * 10000
     args.collaboration = collaboration
     for exp_num in range(args.repetitions):
         audit = Audit(args, dataset)
         audit.run()
         results += audit.results
-        args.seed += 1
+        if args.seed is not None:
+            args.seed += 1
 
     write_results(args, results)
 
 
 if __name__ == "__main__":
     args = get_args()
-    orig_seed = args.seed
-
-    processes = []
 
     if args.dataset == "synthetic":
         budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
@@ -48,6 +47,7 @@ if __name__ == "__main__":
         raise RuntimeError("Unknown dataset %s" % args.dataset)
 
     result_csv_files = []
+    processes = []
     for info in [("none", False), ("aposteriori", False), ("apriori", False)]:
         for budget in budgets:
             p = Process(target=run, args=((info[0], info[1], budget), deepcopy(args)))

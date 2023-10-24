@@ -1,7 +1,7 @@
 import logging
 from abc import abstractmethod, ABC
 from itertools import combinations
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 import pandas as pd
 
@@ -60,31 +60,37 @@ class Dataset(ABC):
         self.subspace_features_probabilities = all_probs
         self.subspace_labels_probabilities = all_ys
 
-    def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: int = 42):
+    def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: Optional[int] = None):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
 
-        index = self.protected_attributes.index(attribute)
-        random_state = random_seed + index
-
-        subset = self.features.sample(n=budget, random_state=random_state)
+        if random_seed is None:
+            subset = self.features.sample(n=budget)
+        else:
+            index = self.protected_attributes.index(attribute)
+            random_state = random_seed + index
+            subset = self.features.sample(n=budget, random_state=random_state)
         subset_y = self.labels.loc[subset.index]
 
         return subset, subset_y
 
-    def sample_selfish_stratified(self, budget: int, attribute: str, random_seed: int = 42):
+    def sample_selfish_stratified(self, budget: int, attribute: str, random_seed: Optional[int] = None):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
 
-        index = self.protected_attributes.index(attribute)
-        random_state = random_seed + index
         X_0 = self.features[self.features[attribute].isin([0])]
         X_1 = self.features[self.features[attribute].isin([1])]
         y_0 = self.labels.loc[X_0.index]
         y_1 = self.labels.loc[X_1.index]
 
         sub_n = budget // 2
-        subset_1 = X_1.sample(n=sub_n, random_state=random_state)
+        if random_seed is None:
+            subset_1 = X_1.sample(n=sub_n)
+            subset_0 = X_0.sample(n=sub_n)
+        else:
+            index = self.protected_attributes.index(attribute)
+            random_state = random_seed + index
+            subset_1 = X_1.sample(n=sub_n, random_state=random_state)
+            subset_0 = X_0.sample(n=sub_n, random_state=random_state)
         subset_1_y = y_1.loc[subset_1.index]
-        subset_0 = X_0.sample(n=sub_n, random_state=random_state)
         subset_0_y = y_0.loc[subset_0.index]
 
         subset = pd.concat([subset_1, subset_0], ignore_index=True)
@@ -92,7 +98,7 @@ class Dataset(ABC):
 
         return subset, subset_y
 
-    def sample_coordinated_stratified(self, collaborators: List, budget: int, attribute: str, random_seed: int = 42):
+    def sample_coordinated_stratified(self, collaborators: List, budget: int, attribute: str, random_seed: Optional[int] = None):
         all_attrs = collaborators + [attribute]
         n_attrs = len(collaborators) + 1
 
@@ -119,7 +125,10 @@ class Dataset(ABC):
             if len(X_i) < sub_n:
                 raise ValueError('Subspace has insufficient samples')
 
-            subset_i = X_i.sample(n=sub_n, random_state=random_seed)
+            if random_seed is None:
+                subset_i = X_i.sample(n=sub_n, random_state=random_seed)
+            else:
+                subset_i = X_i.sample(n=sub_n)
             subset_i_y = y_i.loc[subset_i.index]
             subset = pd.concat([subset, subset_i], ignore_index=True)
             subset_y = pd.concat([subset_y, subset_i_y], ignore_index=True)
