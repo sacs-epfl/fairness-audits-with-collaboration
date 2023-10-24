@@ -12,8 +12,39 @@ def demographic_parity(features, labels, attribute) -> float:
 def demographic_parity_error(sampled_features, sampled_labels, attribute, ground_truth_dp):
     return np.abs(demographic_parity(sampled_features, sampled_labels, attribute) - ground_truth_dp)
 
-
 def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
+    all_attrs = other_attrs + [attr]
+    n_attrs = len(all_attrs)
+    n_subspaces = 2 ** n_attrs
+
+    agent_ids = [(protected_attributes.index(a), a) for a in other_attrs]
+    agent_ids.sort()
+    agent_id_str = ''.join([str(elem) for elem, _ in agent_ids])
+    own_index = agent_ids.index((protected_attributes.index(attr), attr))
+    all_attrs = [a for _, a in agent_ids] # sorted accordings to ids
+
+    binary_strings = [format(i, f'0{n_attrs}b') for i in range(n_subspaces)]
+
+    prob_y_given_1 = 0
+    prob_y_given_0 = 0
+
+    for binary_string in binary_strings:
+
+        pairs = [(all_attrs[i], int(binary_string[i])) for i in range(n_attrs)]
+
+        X_temp = features.copy()
+        for a, val in pairs:
+            X_temp = X_temp[X_temp[a] == val]
+        y_tmp = labels.loc[X_temp.index]
+
+        if binary_string[own_index] == '1':
+            prob_y_given_1 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
+        else:
+            prob_y_given_0 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
+
+    return np.abs(prob_y_given_1 - prob_y_given_0).item(), None
+
+def demographic_parity_unbiased_old(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
     n_attrs = len(other_attrs)
     n_subspaces = 2 ** n_attrs
 
