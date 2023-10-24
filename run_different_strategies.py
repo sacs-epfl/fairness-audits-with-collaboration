@@ -48,12 +48,16 @@ if __name__ == "__main__":
 
     result_csv_files = []
     processes = []
-    for info in [("none", False), ("aposteriori", False), ("apriori", False)]:
+    for info in [("none", False), ("aposteriori", False), ("apriori", False), ("apriori", True)]:
         for budget in budgets:
             p = Process(target=run, args=((info[0], info[1], budget), deepcopy(args)))
             p.start()
             processes.append(p)
-            result_csv_files.append(os.path.join("results", "%s_%s_n%d_b%d.csv" % (info[0], args.sample, args.agents, budget)))
+            if info[1]:
+                out_file_name = "%s_%s_n%d_b%d_unbias.csv" % (info[0], args.sample, args.agents, budget)
+            else:
+                out_file_name = "%s_%s_n%d_b%d.csv" % (info[0], args.sample, args.agents, budget)
+            result_csv_files.append(os.path.join("results", out_file_name))
 
     print("Running %d processes (budgets: %s)..." % (len(processes), budgets))
 
