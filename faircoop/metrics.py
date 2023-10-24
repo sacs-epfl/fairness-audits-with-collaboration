@@ -17,7 +17,7 @@ def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other
     n_attrs = len(all_attrs)
     n_subspaces = 2 ** n_attrs
 
-    agent_ids = [(protected_attributes.index(a), a) for a in other_attrs]
+    agent_ids = [(protected_attributes.index(a), a) for a in all_attrs]
     agent_ids.sort()
     agent_id_str = ''.join([str(elem) for elem, _ in agent_ids])
     own_index = agent_ids.index((protected_attributes.index(attr), attr))
