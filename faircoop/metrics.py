@@ -3,8 +3,14 @@ import numpy as np
 
 def demographic_parity(features, labels, attribute) -> float:
     # Calculate demographic parity for 'attribute'
-    prob_y_given_attribute_0 = labels[features[attribute].isin([0])].mean().item()
-    prob_y_given_attribute_1 = labels[features[attribute].isin([1])].mean().item()
+    X_0 = features.copy()
+    X_0 = X_0[X_0[attribute] == 0]
+    prob_y_given_attribute_0 = labels.loc[X_0.index].mean().item()
+    
+    X_1 = features.copy()
+    X_1 = X_1[X_1[attribute] == 1]
+    prob_y_given_attribute_1 = labels.loc[X_1.index].mean().item()
+    
     demographic_parity_attribute = abs(prob_y_given_attribute_1 - prob_y_given_attribute_0)
     return demographic_parity_attribute
 
@@ -25,8 +31,9 @@ def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other
 
     binary_strings = [format(i, f'0{n_attrs}b') for i in range(n_subspaces)]
 
-    prob_y_given_1 = 0
-    prob_y_given_0 = 0
+    prob_y_given_1 = 0; prob_y_given_0 = 0
+    count_1 = 0; count_0 = 0
+    p_subspaces = 0
 
     for binary_string in binary_strings:
 
@@ -37,11 +44,20 @@ def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other
             X_temp = X_temp[X_temp[a] == val]
         y_tmp = labels.loc[X_temp.index]
 
-        if binary_string[own_index] == '1':
-            prob_y_given_1 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
-        else:
-            prob_y_given_0 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
+        assert len(X_temp) == len(y_tmp), f'Length mismatch ==> X: {len(X_temp)}, y: {len(y_tmp)}'
 
+        if binary_string[own_index] == '1':
+            count_1 += 1
+            prob_y_given_1 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
+            p_subspaces += all_probs[n_attrs][agent_id_str][binary_string]
+        else:
+            count_0 += 1
+            prob_y_given_0 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
+            p_subspaces += all_probs[n_attrs][agent_id_str][binary_string]
+        
+    assert np.isclose(p_subspaces, 1), f'Probability over all subspaces is not 1: {p_subspaces}'
+    assert count_1 == count_0, f'Mismatch ==> Count 1: {count_1}, Count 0: {count_0}'
+    
     return np.abs(prob_y_given_1 - prob_y_given_0).item(), None
 
 def demographic_parity_unbiased_old(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
@@ -122,6 +138,6 @@ def demographic_parity_error_unbiased(features, labels, attr, all_probs, all_ys,
     if not other_attrs:
         return demographic_parity_error(features, labels, attr, ground_truth_dp), None
     else:
-        dp_mean, dp_std = demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs,
+        dp_mean, _ = demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs,
                                                       all_attributes, dataset_size)
         return np.abs(dp_mean - ground_truth_dp).item()

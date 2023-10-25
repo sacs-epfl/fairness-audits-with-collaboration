@@ -53,6 +53,7 @@ class Dataset(ABC):
                     for attr, val in pairs:
                         X_temp = X_temp[X_temp[attr] == val]
                     y_tmp = self.labels.loc[X_temp.index]
+                    assert len(X_temp) == len(y_tmp), f'Length mismatch ==> X: {len(X_temp)}, y: {len(y_tmp)}'
 
                     all_probs[k][agent_comb_str][binary_string] = len(X_temp) / len(self.features)
                     all_ys[k][agent_comb_str][binary_string] = y_tmp.mean().item()
