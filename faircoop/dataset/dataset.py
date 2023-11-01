@@ -99,9 +99,8 @@ class Dataset(ABC):
 
         return subset, subset_y
 
-    def sample_coordinated_stratified(self, collaborators: List, budget: int, attribute: str, random_seed: Optional[int] = None):
-        all_attrs = collaborators + [attribute]
-        n_attrs = len(collaborators) + 1
+    def sample_coordinated_stratified(self, attributes: List[str], budget: int, random_seed: Optional[int] = None):
+        n_attrs = len(attributes)
 
         n_subspaces = 2 ** n_attrs
         sub_n = budget // n_subspaces
@@ -109,7 +108,7 @@ class Dataset(ABC):
 
         subspaces = []
         for binary_string in binary_strings:
-            pairs = [(all_attrs[i], int(binary_string[i])) for i in range(n_attrs)]
+            pairs = [(attributes[i], int(binary_string[i])) for i in range(n_attrs)]
 
             X_temp = self.features.copy()
             for attr, val in pairs:

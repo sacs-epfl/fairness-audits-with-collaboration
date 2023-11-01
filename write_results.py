@@ -13,14 +13,14 @@ def write_results(args, results):
     results_file_name += ".csv"
     results_file_path = os.path.join("results", results_file_name)
     with open(results_file_path, "w") as results_file:
-        results_file.write("dataset,collaboration,sample,agents,seed,budget,agent,dp_error\n")
+        results_file.write("dataset,collaboration,sample,agents,seed,budget,agent,attribute,collaborating_agents,dp_error\n")
 
         group_name = args.collaboration
         if args.collaboration == "apriori" and args.unbias_mean:
             group_name = "apriori (unbiased)"
 
         for result in results:
-            results_file.write("%s,%s,%s,%d,%d,%d,%d,%f\n" % (args.dataset, group_name, args.sample, args.agents, *result))
+            results_file.write("%s,%s,%s,%d,%d,%d,%d,%s,%s,%f\n" % (args.dataset, group_name, args.sample, args.agents, *result))
 
 
 def merge_csv_files(filenames, output_filename):
