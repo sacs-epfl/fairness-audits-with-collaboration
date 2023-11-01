@@ -9,17 +9,20 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--attributes", type=int, default=20)
 parser.add_argument("--rows", type=int, default=None)
-parser.add_argument("--prob-a0-appear", type=float, default=None)
-parser.add_argument("--bias", type=float, help="The bias on the first weights.", default=5)
+parser.add_argument("--prob-a0-appear", type=float, default=None, help="The probability that the first attribute is a 0.")
+parser.add_argument("--bias", type=str, default=None, help="The bias on particular weights, provided as: '0=3,1=4'.")
 args = parser.parse_args()
 
 rand = random.Random(args.seed)
 generated_rows = set()
 
+biases = {int(k): int(v) for k, v in (pair.split('=') for pair in args.bias.split(','))} if args.bias else {}
 weights = []
 for i in range(args.attributes):
-    weights.append(1)  # No bias
-weights[0] = args.bias
+    if i in biases:
+        weights.append(biases[i])
+    else:
+        weights.append(1)  # No bias
 
 bs = sum(weights)
 WEIGHTS = [i / bs for i in weights]  # Normalize
