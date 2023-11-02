@@ -18,7 +18,7 @@ def demographic_parity(features, labels, attribute) -> float:
 def demographic_parity_error(sampled_features, sampled_labels, attribute, ground_truth_dp):
     return np.abs(demographic_parity(sampled_features, sampled_labels, attribute) - ground_truth_dp)
 
-def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
+def demographic_parity_unbiased_old_v2(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
     all_attrs = other_attrs + [attr]
     n_attrs = len(all_attrs)
     n_subspaces = 2 ** n_attrs
@@ -60,7 +60,56 @@ def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other
     
     return np.abs(prob_y_given_1 - prob_y_given_0).item(), None
 
-def demographic_parity_unbiased_old(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
+def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
+    n_attrs = len(other_attrs)
+    n_subspaces = 2 ** n_attrs
+
+    X_1 = features[features[attr] == 1]
+    y_1 = labels.loc[X_1.index]
+
+    X_0 = features[features[attr] == 0]
+    y_0 = labels.loc[X_0.index]
+
+    subspaces_1 = []
+    subspaces_0 = []
+
+    agent_ids = [(protected_attributes.index(a), a) for a in other_attrs]
+    agent_ids.sort()
+    agent_id_str = ''.join([str(elem) for elem, _ in agent_ids])
+    other_attrs = [a for _, a in agent_ids] # sorted accordings to ids
+
+    binary_strings = [format(i, f'0{n_attrs}b') for i in range(n_subspaces)]
+
+    for binary_string in binary_strings:
+
+        pairs = [(other_attrs[i], int(binary_string[i])) for i in range(n_attrs)]
+
+        X_temp = X_1.copy()
+        for a, val in pairs:
+            X_temp = X_temp[X_temp[a] == val]
+
+        y_tmp = y_1.loc[X_temp.index]
+        subspaces_1.append((X_temp, y_tmp))
+
+        X_temp = X_0.copy()
+        for a, val in pairs:
+            X_temp = X_temp[X_temp[a] == val]
+        y_tmp = y_0.loc[X_temp.index]
+        subspaces_0.append((X_temp, y_tmp))
+
+    prob_y_given_1 = 0; prob_y_given_0 = 0
+    for i, binary_string in enumerate(binary_strings):
+        
+        prob_subspace = all_probs[n_attrs][agent_id_str][binary_string]
+
+        prob_y_given_1 += subspaces_1[i][1].mean().item() * prob_subspace
+        prob_y_given_0 += subspaces_0[i][1].mean().item() * prob_subspace
+
+    dp_final = np.abs(prob_y_given_1 - prob_y_given_0).item()
+
+    return dp_final, None
+        
+def demographic_parity_unbiased_old_v1(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
     n_attrs = len(other_attrs)
     n_subspaces = 2 ** n_attrs
 
