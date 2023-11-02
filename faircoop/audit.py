@@ -77,7 +77,7 @@ class Audit:
                 attribute = self.args.attributes_to_audit[agent]
 
                 if self.args.unbias_mean:
-                    other_attributes = [attr for attr in self.dataset.protected_attributes if attr != attribute]
+                    other_attributes = [attr for attr in self.args.attributes_to_audit if attr != attribute]
                     dp_error = demographic_parity_error_unbiased(
                         x_all, y_all, attribute, self.dataset.subspace_features_probabilities,
                         self.dataset.subspace_labels_probabilities, other_attributes,
