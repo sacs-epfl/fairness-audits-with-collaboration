@@ -1,7 +1,7 @@
 library(ggplot2)
 library(dplyr)
 
-dat <- read.csv("../../results/german_credit_stratified_n2.csv")
+dat <- read.csv("../../results/propublica_stratified_n2.csv")
 
 dat <- dat %>%
   group_by(collaboration,sample,agents,budget,agent) %>%

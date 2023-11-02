@@ -5,7 +5,7 @@ import os
 
 from faircoop.dataset import get_dataset
 
-DATASETS = ["propublica"]
+DATASETS = ["synthetic"]
 
 if __name__ == "__main__":
     if not os.path.exists("results"):

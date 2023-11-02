@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--attributes", type=int, default=20)
 parser.add_argument("--rows", type=int, default=None)
-parser.add_argument("--prob-a0-appear", type=float, default=None, help="The probability that the first attribute is a 0.")
+parser.add_argument("--attribute-imbalance", type=str, default=None, help="The imbalance of o particular attributes, provided as: '0=0.3,1=0.4 if we want P(a0=1) = 0.3 and P(a1=1) = 0.4")
 parser.add_argument("--bias", type=str, default=None, help="The bias on particular weights, provided as: '0=3,1=4'.")
 args = parser.parse_args()
 
@@ -33,20 +33,19 @@ num_rows = 2 ** args.attributes if args.rows is None else args.rows
 print("Will create a synthetic dataset with %d rows" % num_rows)
 rows_iter = range(2 ** args.attributes) if args.rows is None else rand.sample(range(2 ** args.attributes), args.rows)
 row_count = 0
+imbalances = {int(k): float(v) for k, v in (pair.split('=') for pair in args.attribute_imbalance.split(','))} if args.bias else {}
 for row in rows_iter:
     if row_count % 10000 == 0:
         print("Created %d rows..." % row_count)
 
-    if args.rows is not None and args.prob_a0_appear is not None:
-        if rand.random() < args.prob_a0_appear:
-            first_value = 0
-        else:
-            first_value = 1
+    if args.rows is not None:
+        sample_row = rand.sample(range(2 ** args.attributes), 1)[0]
+        values = [int(c) for c in format(sample_row, '#0%db' % (args.attributes + 2))[2:]]
 
-        # now generate the rest of the row
-        sample_row = rand.sample(range(2 ** (args.attributes - 1)), 1)[0]
-        sample_values = [int(c) for c in format(sample_row, '#0%db' % (args.attributes + 1))[2:]]
-        values = [first_value] + sample_values
+        # Modify the sample values according ot attribute imbalance
+        for attribute_index in range(args.attributes):
+            if attribute_index in imbalances:
+                values[attribute_index] = 0 if rand.random() < imbalances[attribute_index] else 1
     else:
         values = [int(c) for c in format(row, '#0%db' % (args.attributes + 2))[2:]]
 
