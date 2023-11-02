@@ -1,5 +1,6 @@
 from faircoop.dataset.folktables import FolktablesDataset
 from faircoop.dataset.german_credit import GermanCreditDataset
+from faircoop.dataset.propublica import ProPublicaDataset
 from faircoop.dataset.synthetic import SyntheticDataset
 
 
@@ -11,6 +12,8 @@ def get_dataset(dataset_name: str):
         dataset = GermanCreditDataset()
     elif dataset_name == "folktables":
         dataset = FolktablesDataset()
+    elif dataset_name == "propublica":
+        dataset = ProPublicaDataset()
     else:
         raise RuntimeError("Unknown dataset!")
 
