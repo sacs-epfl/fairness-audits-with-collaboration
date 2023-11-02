@@ -14,4 +14,7 @@ def get_args():
 
     args = parser.parse_args()
 
+    if args.attributes_to_audit:
+        args.attributes_to_audit = args.attributes_to_audit.split(",")
+
     return args
