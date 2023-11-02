@@ -39,6 +39,7 @@ def run(info: Tuple[str, bool, List[int]], args):
 
 if __name__ == "__main__":
     args = get_args()
+    agents = len(args.attributes_to_audit)
 
     if args.dataset == "synthetic":
         budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
@@ -59,9 +60,9 @@ if __name__ == "__main__":
             p.start()
             processes.append(p)
             if info[1]:
-                out_file_name = "%s_%s_n%d_b%d_unbias.csv" % (info[0], args.sample, args.agents, budget)
+                out_file_name = "%s_%s_n%d_b%d_unbias.csv" % (info[0], args.sample, agents, budget)
             else:
-                out_file_name = "%s_%s_n%d_b%d.csv" % (info[0], args.sample, args.agents, budget)
+                out_file_name = "%s_%s_n%d_b%d.csv" % (info[0], args.sample, agents, budget)
             result_csv_files.append(os.path.join("results", out_file_name))
 
     print("Running %d processes (budgets: %s)..." % (len(processes), budgets))
@@ -70,5 +71,5 @@ if __name__ == "__main__":
         p.join()
 
     print("Processes done - combining results")
-    output_file_name = os.path.join("results", "%s_%s_n%d.csv" % (args.dataset, args.sample, args.agents))
+    output_file_name = os.path.join("results", "%s_%s_n%d.csv" % (args.dataset, args.sample, agents))
     merge_csv_files(result_csv_files, output_file_name)
