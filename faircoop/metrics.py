@@ -14,51 +14,8 @@ def demographic_parity(features, labels, attribute) -> float:
     demographic_parity_attribute = abs(prob_y_given_attribute_1 - prob_y_given_attribute_0)
     return demographic_parity_attribute
 
-
 def demographic_parity_error(sampled_features, sampled_labels, attribute, ground_truth_dp):
     return np.abs(demographic_parity(sampled_features, sampled_labels, attribute) - ground_truth_dp)
-
-def demographic_parity_unbiased_old_v2(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
-    all_attrs = other_attrs + [attr]
-    n_attrs = len(all_attrs)
-    n_subspaces = 2 ** n_attrs
-
-    agent_ids = [(protected_attributes.index(a), a) for a in all_attrs]
-    agent_ids.sort()
-    agent_id_str = ''.join([str(elem) for elem, _ in agent_ids])
-    own_index = agent_ids.index((protected_attributes.index(attr), attr))
-    all_attrs = [a for _, a in agent_ids] # sorted accordings to ids
-
-    binary_strings = [format(i, f'0{n_attrs}b') for i in range(n_subspaces)]
-
-    prob_y_given_1 = 0; prob_y_given_0 = 0
-    count_1 = 0; count_0 = 0
-    p_subspaces = 0
-
-    for binary_string in binary_strings:
-
-        pairs = [(all_attrs[i], int(binary_string[i])) for i in range(n_attrs)]
-
-        X_temp = features.copy()
-        for a, val in pairs:
-            X_temp = X_temp[X_temp[a] == val]
-        y_tmp = labels.loc[X_temp.index]
-
-        assert len(X_temp) == len(y_tmp), f'Length mismatch ==> X: {len(X_temp)}, y: {len(y_tmp)}'
-
-        if binary_string[own_index] == '1':
-            count_1 += 1
-            prob_y_given_1 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
-            p_subspaces += all_probs[n_attrs][agent_id_str][binary_string]
-        else:
-            count_0 += 1
-            prob_y_given_0 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
-            p_subspaces += all_probs[n_attrs][agent_id_str][binary_string]
-        
-    assert np.isclose(p_subspaces, 1), f'Probability over all subspaces is not 1: {p_subspaces}'
-    assert count_1 == count_0, f'Mismatch ==> Count 1: {count_1}, Count 0: {count_0}'
-    
-    return np.abs(prob_y_given_1 - prob_y_given_0).item(), None
 
 def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
     n_attrs = len(other_attrs)
@@ -107,7 +64,59 @@ def demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other
 
     dp_final = np.abs(prob_y_given_1 - prob_y_given_0).item()
 
-    return dp_final, None
+    return dp_final
+
+def demographic_parity_error_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, ground_truth_dp,
+                                      all_attributes, dataset_size: int):
+    if not other_attrs:
+        raise RuntimeError("Cannot unbias with empty other_attrs!")
+    else:
+        dp_mean = demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs,
+                                                      all_attributes, dataset_size)
+        return np.abs(dp_mean - ground_truth_dp).item()
+
+#### OLD VERSIONS ####
+def demographic_parity_unbiased_old_v2(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
+    all_attrs = other_attrs + [attr]
+    n_attrs = len(all_attrs)
+    n_subspaces = 2 ** n_attrs
+
+    agent_ids = [(protected_attributes.index(a), a) for a in all_attrs]
+    agent_ids.sort()
+    agent_id_str = ''.join([str(elem) for elem, _ in agent_ids])
+    own_index = agent_ids.index((protected_attributes.index(attr), attr))
+    all_attrs = [a for _, a in agent_ids] # sorted accordings to ids
+
+    binary_strings = [format(i, f'0{n_attrs}b') for i in range(n_subspaces)]
+
+    prob_y_given_1 = 0; prob_y_given_0 = 0
+    count_1 = 0; count_0 = 0
+    p_subspaces = 0
+
+    for binary_string in binary_strings:
+
+        pairs = [(all_attrs[i], int(binary_string[i])) for i in range(n_attrs)]
+
+        X_temp = features.copy()
+        for a, val in pairs:
+            X_temp = X_temp[X_temp[a] == val]
+        y_tmp = labels.loc[X_temp.index]
+
+        assert len(X_temp) == len(y_tmp), f'Length mismatch ==> X: {len(X_temp)}, y: {len(y_tmp)}'
+
+        if binary_string[own_index] == '1':
+            count_1 += 1
+            prob_y_given_1 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
+            p_subspaces += all_probs[n_attrs][agent_id_str][binary_string]
+        else:
+            count_0 += 1
+            prob_y_given_0 += y_tmp.mean().item() * all_probs[n_attrs][agent_id_str][binary_string]
+            p_subspaces += all_probs[n_attrs][agent_id_str][binary_string]
+        
+    assert np.isclose(p_subspaces, 1), f'Probability over all subspaces is not 1: {p_subspaces}'
+    assert count_1 == count_0, f'Mismatch ==> Count 1: {count_1}, Count 0: {count_0}'
+    
+    return np.abs(prob_y_given_1 - prob_y_given_0).item(), None
         
 def demographic_parity_unbiased_old_v1(features, labels, attr, all_probs, all_ys, other_attrs, protected_attributes, dataset_size: int):
     n_attrs = len(other_attrs)
@@ -181,12 +190,3 @@ def demographic_parity_unbiased_old_v1(features, labels, attr, all_probs, all_ys
 
     return dp_mean, dp_std
 
-
-def demographic_parity_error_unbiased(features, labels, attr, all_probs, all_ys, other_attrs, ground_truth_dp,
-                                      all_attributes, dataset_size: int):
-    if not other_attrs:
-        return demographic_parity_error(features, labels, attr, ground_truth_dp), None
-    else:
-        dp_mean, _ = demographic_parity_unbiased(features, labels, attr, all_probs, all_ys, other_attrs,
-                                                      all_attributes, dataset_size)
-        return np.abs(dp_mean - ground_truth_dp).item()
