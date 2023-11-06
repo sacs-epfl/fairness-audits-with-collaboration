@@ -21,13 +21,9 @@ def run(info: Tuple[str, bool, List[int]], args):
         args.unbias_mean = True
 
     args.budget = budget
-    
-    # Not required to vary seed budgetwise
-    # if args.seed is not None:
-    #     args.seed += budget * 10000
-    
     args.collaboration = collaboration
-    for exp_num in range(args.repetitions):
+
+    for _ in range(args.repetitions):
         audit = Audit(args, dataset)
         audit.run()
         results += audit.results
