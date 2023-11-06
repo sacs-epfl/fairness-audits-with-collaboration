@@ -67,9 +67,7 @@ class Dataset(ABC):
         if random_seed is None:
             subset = self.features.sample(n=budget)
         else:
-            index = self.protected_attributes.index(attribute)
-            random_state = random_seed + index
-            subset = self.features.sample(n=budget, random_state=random_state)
+            subset = self.features.sample(n=budget, random_state=random_seed)
         subset_y = self.labels.loc[subset.index]
 
         return subset, subset_y
@@ -87,10 +85,8 @@ class Dataset(ABC):
             subset_1 = X_1.sample(n=sub_n)
             subset_0 = X_0.sample(n=sub_n)
         else:
-            index = self.protected_attributes.index(attribute)
-            random_state = random_seed + index
-            subset_1 = X_1.sample(n=sub_n, random_state=random_state)
-            subset_0 = X_0.sample(n=sub_n, random_state=random_state)
+            subset_1 = X_1.sample(n=sub_n, random_state=random_seed)
+            subset_0 = X_0.sample(n=sub_n, random_state=random_seed)
         subset_1_y = y_1.loc[subset_1.index]
         subset_0_y = y_0.loc[subset_0.index]
 
@@ -125,11 +121,12 @@ class Dataset(ABC):
             if len(X_i) < sub_n:
                 raise ValueError('Subspace has insufficient samples')
 
-            if random_seed is None:
+            if random_seed is not None:
                 subset_i = X_i.sample(n=sub_n, random_state=random_seed)
             else:
                 subset_i = X_i.sample(n=sub_n)
             subset_i_y = y_i.loc[subset_i.index]
+            
             subset = pd.concat([subset, subset_i], ignore_index=True)
             subset_y = pd.concat([subset_y, subset_i_y], ignore_index=True)
 
