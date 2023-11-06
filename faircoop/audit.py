@@ -38,11 +38,12 @@ class Audit:
             self.agentwise_used_seeds.append(random_seed)
             
             if self.args.sample == "uniform":
-                if self.args.collaboration == "none":
+                if self.args.collaboration in ["none", "aposteriori"]:
                     x_sampled, y_sampled = self.dataset.sample_selfish_uniform(
                         self.args.budget, attribute, random_seed=random_seed)
                 else:
-                    raise RuntimeError("Sample strategy not supported!")
+                    raise RuntimeError(f"Sample strategy {self.args.sample} with {self.args.collaboration} not supported!")
+                
                 queries_per_agent.append((x_sampled, y_sampled))
             elif self.args.sample == "stratified":
                 if self.args.collaboration in ["none", "aposteriori"]:
