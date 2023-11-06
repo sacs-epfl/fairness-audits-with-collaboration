@@ -25,8 +25,8 @@ class Audit:
             self.args.sample = "stratified"
 
     def run(self):
-        self.logger.info("Running audit with %s sampling and collaboration mode: %s (seed: %s)",
-                         self.args.sample, self.args.collaboration, self.args.seed)
+        self.logger.info("Running audit with %s sampling and collaboration mode %s and unbiasing %s: (seed: %s)",
+                         self.args.sample, self.args.collaboration, self.args.unbias_mean, self.args.seed)
 
         queries_per_agent: List[Tuple[List, List]] = []
         collab_attributes = self.args.attributes_to_audit
