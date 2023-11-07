@@ -93,8 +93,12 @@ class Dataset(ABC):
     def sample_selfish_stratified(self, budget: int, attribute: str, random_seed: Optional[int] = None):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
 
-        X_0 = self.features[self.features[attribute].isin([0])]
-        X_1 = self.features[self.features[attribute].isin([1])]
+        X_0 = self.features.copy()
+        X_0 = X_0[X_0[attribute] == 0]
+        
+        X_1 = self.features.copy()
+        X_1 = X_1[X_1[attribute] == 1]
+
         y_0 = self.labels.loc[X_0.index]
         y_1 = self.labels.loc[X_1.index]
 
@@ -105,6 +109,7 @@ class Dataset(ABC):
         else:
             subset_1 = X_1.sample(n=sub_n, random_state=random_seed)
             subset_0 = X_0.sample(n=sub_n, random_state=random_seed)
+        
         subset_1_y = y_1.loc[subset_1.index]
         subset_0_y = y_0.loc[subset_0.index]
 
