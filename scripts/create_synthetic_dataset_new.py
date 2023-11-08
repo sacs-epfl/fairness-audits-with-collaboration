@@ -4,17 +4,17 @@ Create a synthetic dataset with some bias on the first weight.
 import argparse
 import os
 import numpy as np
-from scipy.optimize import linprog
+# from scipy.optimize import linprog
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", type=int, default=42)
 parser.add_argument("--attributes", type=int, default=20)
 parser.add_argument("--rows", type=int, default=100000)
-parser.add_argument("--pc0", type=float, default=0.9, help="The probability of a0=1")
-parser.add_argument("--pc1", type=float, default=0.7, help="The probability of a1=1")
-parser.add_argument("--dp0", type=float, default=0.19, help="Demographic parity on a0")
-parser.add_argument("--dp1", type=float, default=0.11, help="Demographic parity on a1")
-parser.add_argument("--pyc01", type=float, default=0.6, help="The probability of y=1 given a0=1")
+parser.add_argument("--pc0", type=float, default=0.0993, help="The probability of a0=1")
+parser.add_argument("--pc1", type=float, default=0.2968, help="The probability of a1=1")
+parser.add_argument("--dp0", type=float, default=0.194391, help="Demographic parity on a0")
+parser.add_argument("--dp1", type=float, default=0.118654, help="Demographic parity on a1")
+parser.add_argument("--pyc01", type=float, default=0.4, help="The probability of y=1 given a0=1")
 args = parser.parse_args()
 
 rng = np.random.default_rng(args.seed)
@@ -26,25 +26,35 @@ pyc00 = abs(dp0 - pyc01)
 py = pyc01 * pc0 + pyc00 * (1 - pc0)
 pyc11 = py + dp1 * (1 - pc1)
 pyc10 = abs(pyc11 - dp1)
+py = pyc01 * pc0 + pyc00 * (1 - pc0)
 
 ##############################################
-q1 = pc0
-r1 = pc1
 
-obj = [1, 1, 1, 1]
+pc00c10 = pyc00*pyc10/py
+pc01c10 = pyc01*pyc10/py
+pc00c11 = pyc00*pyc11/py
+pc01c11 = pyc01*pyc11/py
 
-lhs_eq =  [[r1, 0, 1-r1, 0],
-[0, r1, 0, 1-r1],
-[q1, 1-q1, 0, 0],
-[0, 0, q1, 1-q1]]
+##############################################
+# q1 = pc0
+# r1 = pc1
 
-rhs_eq = [pyc01, pyc00, pyc11, pyc10]
+# obj = [1, 1, 1, 1]
 
-bnd = [(5e-2, 1), (5e-2, 1), (5e-2, 1), (5e-2, 1)]
+# lhs_eq =  [[r1, 0, 1-r1, 0],
+# [0, r1, 0, 1-r1],
+# [q1, 1-q1, 0, 0],
+# [0, 0, q1, 1-q1]]
 
-opt = linprog(c=obj, A_eq=lhs_eq, b_eq=rhs_eq, bounds=bnd, method="interior-point")
+# rhs_eq = [pyc01, pyc00, pyc11, pyc10]
 
-pc01c11, pc00c11, pc01c10, pc00c10 = opt.x
+# bnd = [(5e-2, 1), (5e-2, 1), (5e-2, 1), (5e-2, 1)]
+
+# opt = linprog(c=obj, A_eq=lhs_eq, b_eq=rhs_eq, bounds=bnd, method="interior-point")
+
+# pc01c11, pc00c11, pc01c10, pc00c10 = opt.x
+
+##############################################
 
 print("=== Probabilities ===")
 print("P(a0 = 0) = %f, P(a0 = 1) = %f" % (1 - pc0, pc0))
