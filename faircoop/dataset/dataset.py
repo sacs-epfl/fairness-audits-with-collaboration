@@ -4,6 +4,7 @@ from itertools import combinations
 from typing import List, Dict, Optional
 import os
 import pickle
+import heapq
 
 import pandas as pd
 
@@ -79,8 +80,11 @@ class Dataset(ABC):
         pickle.dump(all_probs, open(all_probs_file, "wb"))
         pickle.dump(all_ys, open(all_ys_file, "wb"))
 
-    def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: Optional[int] = None):
+    def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: Optional[int] = None, oversample: bool = False):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
+
+        # checks if there are enough samples in the dataset
+        budget = self._sample_subspace_with_limit([len(self.features)], budget)[0]
 
         if random_seed is None:
             subset = self.features.sample(n=budget)
@@ -90,7 +94,7 @@ class Dataset(ABC):
 
         return subset, subset_y
 
-    def sample_selfish_stratified(self, budget: int, attribute: str, random_seed: Optional[int] = None):
+    def sample_selfish_stratified(self, budget: int, attribute: str, random_seed: Optional[int] = None, oversample: bool = False):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
 
         X_0 = self.features.copy()
@@ -103,12 +107,18 @@ class Dataset(ABC):
         y_1 = self.labels.loc[X_1.index]
 
         sub_n = budget // 2
-        if random_seed is None:
-            subset_1 = X_1.sample(n=sub_n)
-            subset_0 = X_0.sample(n=sub_n)
+
+        if oversample:
+            sub_n1, sub_n0 = self._sample_subspace_with_limit([len(X_1), len(X_0)], sub_n)
         else:
-            subset_1 = X_1.sample(n=sub_n, random_state=random_seed)
-            subset_0 = X_0.sample(n=sub_n, random_state=random_seed)
+            sub_n1 = sub_n0 = sub_n
+
+        if random_seed is None:
+            subset_1 = X_1.sample(n=sub_n1)
+            subset_0 = X_0.sample(n=sub_n0)
+        else:
+            subset_1 = X_1.sample(n=sub_n1, random_state=random_seed)
+            subset_0 = X_0.sample(n=sub_n0, random_state=random_seed)
         
         subset_1_y = y_1.loc[subset_1.index]
         subset_0_y = y_0.loc[subset_0.index]
@@ -118,7 +128,7 @@ class Dataset(ABC):
 
         return subset, subset_y
 
-    def sample_coordinated_stratified(self, attributes: List[str], budget: int, random_seed: Optional[int] = None):
+    def sample_coordinated_stratified(self, attributes: List[str], budget: int, random_seed: Optional[int] = None, oversample: bool = False):
         n_attrs = len(attributes)
 
         n_subspaces = 2 ** n_attrs
@@ -136,18 +146,24 @@ class Dataset(ABC):
             y_tmp = self.labels.loc[X_temp.index]
             subspaces.append((X_temp, y_tmp))
 
+        len_subspaces = [len(X_i) for X_i, _ in subspaces]  
+        if oversample:
+            sub_ns = self._sample_subspace_with_limit(len_subspaces, sub_n)
+        else:
+            sub_ns = [sub_n] * n_subspaces
+
         # sample sub_n from each subspace
         subset = pd.DataFrame()
         subset_y = pd.DataFrame()
-        for X_i, y_i in subspaces:
+        for i, (X_i, y_i) in enumerate(subspaces):
             # check if subspace has sufficient samples
-            if len(X_i) < sub_n:
+            if not oversample and len(X_i) < sub_ns[i]:
                 raise ValueError('Subspace has insufficient samples')
 
             if random_seed is not None:
-                subset_i = X_i.sample(n=sub_n, random_state=random_seed)
+                subset_i = X_i.sample(n=sub_ns[i], random_state=random_seed)
             else:
-                subset_i = X_i.sample(n=sub_n)
+                subset_i = X_i.sample(n=sub_ns[i])
             subset_i_y = y_i.loc[subset_i.index]
             
             subset = pd.concat([subset, subset_i], ignore_index=True)
@@ -160,6 +176,69 @@ class Dataset(ABC):
             dp: float = demographic_parity(self.features, self.labels, protected_attribute)
             self.ground_truth_dps[protected_attribute] = dp
             self.logger.debug("Ground truth DP of %s: %f" % (protected_attribute, dp))
+
+    def _sample_subspace_with_limit(self, subspaces_sizes_avail: List[int], n_each: int):
+        """
+        PARAMETERS
+            subspaces_sizes_avail: List[int]
+                list of sizes of subspaces that are available for sampling
+            n_each: int
+                number of samples to be sampled from each subspace
+
+        RETURNS
+            list of sizes of subspaces that were sampled by oversampling equally from all subspaces
+        """
+        logging.debug(f'subspaces_sizes_avail: {subspaces_sizes_avail}')
+        # total number of subspaces
+        n_total = len(subspaces_sizes_avail)
+        # total number of samples to be sampled across all subspaces
+        budget_total = n_each * n_total
+        if n_each * n_total > sum(subspaces_sizes_avail):
+            raise ValueError('Not enough samples in dataset')
+        
+        subspace_sizes_req = [n_each] * n_total
+        n_rem = n_total
+        logging.debug(f'subspace_sizes_req: {subspace_sizes_req}')
+
+        subspaces_size_sampled = [-1] * n_total
+        priority_queue = []
+        for i in range(n_total):
+            heapq.heappush(priority_queue, (subspaces_sizes_avail[i], i))
+        
+        yet_unsampled = set(range(n_total))
+
+        while n_rem > 0:
+            _, idx = heapq.heappop(priority_queue)
+            n_rem -= 1
+            if subspace_sizes_req[idx] > subspaces_sizes_avail[idx]:
+                n_left = subspace_sizes_req[idx] - subspaces_sizes_avail[idx]
+                n_left_each = n_left // n_rem
+                extra = n_left % n_rem
+                # set how much was sampled for idx
+                subspaces_size_sampled[idx] = subspaces_sizes_avail[idx]
+                # set how is available for idx to 0
+                subspaces_sizes_avail[idx] = 0
+                # remove idx from yet_unsampled
+                yet_unsampled.remove(idx)
+                # distribute the remaining samples to other subspaces
+                for i in yet_unsampled:
+                    subspace_sizes_req[i] += n_left_each
+                    if extra > 0:
+                        subspace_sizes_req[i] += 1
+                        extra -= 1
+                assert extra == 0, 'Mistake in the algorithm'
+            else:
+                subspaces_size_sampled[idx] = subspace_sizes_req[idx]
+                subspaces_sizes_avail[idx] -= subspace_sizes_req[idx]
+                subspace_sizes_req[idx] = 0
+                yet_unsampled.remove(idx)
+        
+        assert len(yet_unsampled) == 0, 'Mistake in the algorithm'
+        assert -1 not in subspaces_size_sampled, 'Mistake in the algorithm'
+        assert sum(subspaces_size_sampled) == budget_total, 'Mistake in the algorithm'
+        
+        logging.debug(f'subspaces_size_sampled: {subspaces_size_sampled}')
+        return subspaces_size_sampled
 
     @abstractmethod
     def load_dataset(self):

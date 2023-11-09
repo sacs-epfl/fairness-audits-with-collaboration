@@ -40,7 +40,7 @@ class Audit:
             if self.args.sample == "uniform":
                 if self.args.collaboration in ["none", "aposteriori"]:
                     x_sampled, y_sampled = self.dataset.sample_selfish_uniform(
-                        self.args.budget, attribute, random_seed=random_seed)
+                        self.args.budget, attribute, random_seed=random_seed, oversample=self.args.oversample)
                 else:
                     raise RuntimeError(f"Sample strategy {self.args.sample} with {self.args.collaboration} not supported!")
                 
@@ -48,10 +48,10 @@ class Audit:
             elif self.args.sample == "stratified":
                 if self.args.collaboration in ["none", "aposteriori"]:
                     x_sampled, y_sampled = self.dataset.sample_selfish_stratified(
-                        self.args.budget, attribute, random_seed)
+                        self.args.budget, attribute, random_seed, oversample=self.args.oversample)
                 elif self.args.collaboration == "apriori":
                     x_sampled, y_sampled = self.dataset.sample_coordinated_stratified(
-                        collab_attributes, self.args.budget, random_seed)
+                        collab_attributes, self.args.budget, random_seed, oversample=self.args.oversample)
                 else:
                     raise RuntimeError("Sample strategy not supported!")
                                 

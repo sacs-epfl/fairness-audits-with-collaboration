@@ -11,6 +11,7 @@ def get_args():
     parser.add_argument("--seed", type=int, default=None)
     parser.add_argument("--repetitions", type=int, default=10)
     parser.add_argument('--unbias-mean', action='store_true')
+    parser.add_argument('--oversample', action='store_true')
 
     args = parser.parse_args()
 
