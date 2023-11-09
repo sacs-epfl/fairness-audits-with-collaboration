@@ -9,3 +9,7 @@ data/**
 .idea
 .DS_Store
 *.out
+.vscode
+demographic_parity_two_agents_v2.py
+test.ipynb
+variance_clean.py
