@@ -13,10 +13,10 @@ from write_results import write_results, merge_csv_files
 logging.basicConfig(level=logging.INFO)
 
 
-def run(info: Tuple[str, bool, List[int]], args):
+def run(info: Tuple[str, bool, List[int], str], args):
     dataset = get_dataset(args.dataset)
     results: List = []
-    collaboration, should_unbias, budget = info
+    collaboration, should_unbias, budget, results_file_name = info
     if should_unbias:
         args.unbias_mean = True
 
@@ -30,7 +30,7 @@ def run(info: Tuple[str, bool, List[int]], args):
         if args.seed is not None:
             args.seed += 1
 
-    write_results(args, results)
+    write_results(args, results, results_file_name)
 
 
 if __name__ == "__main__":
@@ -52,13 +52,15 @@ if __name__ == "__main__":
     processes = []
     for info in [("none", False), ("aposteriori", False), ("apriori", False), ("apriori", True)]:
         for budget in budgets:
-            p = Process(target=run, args=((info[0], info[1], budget), deepcopy(args)))
-            p.start()
-            processes.append(p)
             if info[1]:
                 out_file_name = "%s_%s_n%d_b%d_unbias.csv" % (info[0], args.sample, agents, budget)
             else:
                 out_file_name = "%s_%s_n%d_b%d.csv" % (info[0], args.sample, agents, budget)
+
+            p = Process(target=run, args=((info[0], info[1], budget, out_file_name), deepcopy(args)))
+            p.start()
+            processes.append(p)
+
             result_csv_files.append(os.path.join("results", out_file_name))
 
     print("Running %d processes (budgets: %s)..." % (len(processes), budgets))
