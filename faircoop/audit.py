@@ -20,7 +20,7 @@ class Audit:
 
         self.num_agents: int = len(self.args.attributes_to_audit)
 
-        if args.collaboration == "aposteriori" and args.sample != "stratified":
+        if args.collaboration == "apriori" and args.sample != "stratified":
             self.logger.info("Setting sampling method to stratified for a posteriori collaboration")
             self.args.sample = "stratified"
 
@@ -58,6 +58,7 @@ class Audit:
                 queries_per_agent.append((x_sampled, y_sampled))
 
         # Combine the queries of collaborating agents and compute the DPs
+        self.logger.info("Sampling done. Computing DP error...")
 
         if self.args.collaboration == "none":
             # Compute the DP error per agent
