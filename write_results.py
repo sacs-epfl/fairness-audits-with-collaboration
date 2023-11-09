@@ -1,7 +1,7 @@
 import os
 
 import pandas as pd
-
+import logging
 
 def write_results(args, results):
     if not os.path.exists("results"):
@@ -14,6 +14,8 @@ def write_results(args, results):
         results_file_name += "_unbias"
     results_file_name += ".csv"
     results_file_path = os.path.join("results", results_file_name)
+
+    logging.info("Writing results to %s", results_file_path)
     with open(results_file_path, "w") as results_file:
         results_file.write("dataset,collaboration,sample,agents,seed,budget,agent,attribute,dp_error\n")
 
