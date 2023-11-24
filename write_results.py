@@ -3,16 +3,11 @@ import os
 import pandas as pd
 import logging
 
-def write_results(args, results):
+def write_results(args, results, results_file_name: str):
     if not os.path.exists("results"):
         os.mkdir("results")
 
     agents: int = len(args.attributes_to_audit)
-
-    results_file_name = "%s_%s_n%d_b%d" % (args.collaboration, args.sample, agents, args.budget)
-    if args.unbias_mean:
-        results_file_name += "_unbias"
-    results_file_name += ".csv"
     results_file_path = os.path.join("results", results_file_name)
 
     logging.info("Writing results to %s", results_file_path)

@@ -14,7 +14,7 @@ class SyntheticDataset(Dataset):
         self.logger.info("Synthetic dataset loaded (rows: %d)", len(self.features))
 
         # self.protected_attributes = list(self.features.columns.values)
-        self.protected_attributes = ["a0", "a1"]
+        self.protected_attributes = ["a0", "a1", "a2"]
         self.compute_ground_truth_dp()
         self.compute_subspace_probabilities()
 
