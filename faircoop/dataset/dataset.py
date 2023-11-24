@@ -22,7 +22,8 @@ class Dataset(ABC):
         self.subspace_features_probabilities = None
         self.subspace_labels_probabilities = None
 
-    def compute_subspace_probabilities(self):
+    # with independence assumption
+    def compute_subspace_probabilities_independent(self):
 
         # Check if pickle file already exists
         all_probs_file = os.path.join("data", self.get_name(), "all_probs.pkl")
@@ -79,6 +80,76 @@ class Dataset(ABC):
         self.logger.info("Saving subspace probabilities to pickle file...")
         pickle.dump(all_probs, open(all_probs_file, "wb"))
         pickle.dump(all_ys, open(all_ys_file, "wb"))
+
+    # no independence assumption
+    def compute_subspace_probabilities(self):
+        n = n = len(self.protected_attributes)
+
+        all_probs = dict()
+        all_ys = dict()
+
+        for base_agent in range(n): # Base agent
+            print(f'Working on base agent {base_agent}')
+            base_attr = self.protected_attributes[base_agent]
+            possible_collaborators = [i for i in range(n) if i != base_agent]
+            all_probs[base_agent] = dict()
+            all_ys[base_agent] = dict()
+
+            X_0 = self.features.copy()
+            X_0 = X_0[X_0[base_attr] == 0]
+            y_0 = self.labels.loc[X_0.index]
+
+            X_1 = self.features.copy()
+            X_1 = X_1[X_1[base_attr] == 1]
+            y_1 = self.labels.loc[X_1.index]
+
+            for k in range(1, n): # Number of collaborators, 1 to n-1
+
+                print(f'Working on k={k}')
+                all_probs[base_agent][k] = dict()
+                all_ys[base_agent][k] = dict()
+
+                agent_combinations_list = list(combinations(possible_collaborators, k))
+
+                for agent_combination in agent_combinations_list:
+                    agent_comb_str = ''.join([str(elem) for elem in agent_combination])
+
+                    all_probs[base_agent][k][agent_comb_str] = dict()
+                    all_ys[base_agent][k][agent_comb_str] = dict()
+
+                    total_strings = 2 ** (k)
+                    binary_strings = [format(i, f'0{k}b') for i in range(total_strings)]
+
+                    attrs = [self.protected_attributes[i] for i in agent_combination]
+                    print(f'Working on {attrs}')
+                    for binary_string in binary_strings:
+
+                        all_probs[base_agent][k][agent_comb_str][binary_string] = dict()
+                        all_ys[base_agent][k][agent_comb_str][binary_string] = dict()
+
+                        pairs = [(attrs[i], int(binary_string[i])) for i in range(k)]
+
+                        # Restore X_transformed that satisfies the binary string
+                        X_temp = X_0.copy()
+                        for attr, val in pairs:
+                            X_temp = X_temp[X_temp[attr] == val]
+                        y_tmp = y_0.loc[X_temp.index]
+                        assert len(X_temp) == len(y_tmp), f'Length mismatch ==> X: {len(X_temp)}, y: {len(y_tmp)}'
+                        
+                        all_probs[base_agent][k][agent_comb_str][binary_string][0] = len(X_temp) / len(X_0)
+                        all_ys[base_agent][k][agent_comb_str][binary_string][0] = y_tmp.mean().item()
+                        
+                        X_temp = X_1.copy()
+                        for attr, val in pairs:
+                            X_temp = X_temp[X_temp[attr] == val]
+                        y_tmp = y_1.loc[X_temp.index]
+                        assert len(X_temp) == len(y_tmp), f'Length mismatch ==> X: {len(X_temp)}, y: {len(y_tmp)}'
+                        
+                        all_probs[base_agent][k][agent_comb_str][binary_string][1] = len(X_temp) / len(X_1)
+                        all_ys[base_agent][k][agent_comb_str][binary_string][1] = y_tmp.mean().item()
+        
+        self.subspace_features_probabilities = all_probs
+        self.subspace_labels_probabilities = all_ys
 
     def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: Optional[int] = None, oversample: bool = False):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
