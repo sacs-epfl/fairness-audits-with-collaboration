@@ -38,11 +38,15 @@ if __name__ == "__main__":
     agents = len(args.attributes_to_audit)
 
     if args.dataset == "synthetic":
-        budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+        # budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+        budgets = [100, 200, 400, 800, 1600, 3200, 6400]
+        # budgets = [100, 1000, 3000, 7000, 10000]
     elif args.dataset == "german_credit":
-        budgets = [50, 100, 150, 200, 250]
+        budgets = [50, 100, 150, 200, 250, 500, 750, 1000]
+        # budgets = [50, 100, 150, 200, 250]
     elif args.dataset == "propublica":
-        budgets = [50, 100, 150, 200, 250]
+        # budgets = [50, 100, 150, 200, 250]
+        budgets = [100, 200, 400, 800, 1600, 3200, 6000]
     elif args.dataset == "folktables":
         budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
     else:
@@ -50,7 +54,15 @@ if __name__ == "__main__":
 
     result_csv_files = []
     processes = []
-    for info in [("none", False), ("aposteriori", False), ("apriori", False), ("apriori", True)]:
+
+    # for stratified
+    to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
+
+    # for uniform
+    # to_run = [("none", False), ("aposteriori", False)]
+    # assert args.sample == "uniform", "Only uniform sampling supported for with this to_run!"
+
+    for info in to_run:
         for budget in budgets:
             p = Process(target=run, args=((info[0], info[1], budget), deepcopy(args)))
             p.start()
