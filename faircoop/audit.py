@@ -34,7 +34,7 @@ class Audit:
             self.logger.info("Agent %d auditing attribute %s of black box...", agent, attribute)
             
             # Set the seed depending on the agent
-            random_seed = self.args.seed + (agent+1) * 100000 if self.args.seed is not None else self.args.seed
+            random_seed = self.args.seed + (agent+1) * 10000 if self.args.seed is not None else self.args.seed
             self.agentwise_used_seeds.append(random_seed)
             
             if self.args.sample == "uniform":

@@ -3,12 +3,12 @@ import os
 import pandas as pd
 import logging
 
-def write_results(args, results, results_file_name: str):
-    if not os.path.exists("results"):
-        os.mkdir("results")
+def write_results(args, results, results_file_name: str, write_dir: str = "results"):
+    if not os.path.exists(write_dir):
+        os.mkdir(write_dir)
 
     agents: int = len(args.attributes_to_audit)
-    results_file_path = os.path.join("results", results_file_name)
+    results_file_path = os.path.join(write_dir, results_file_name)
 
     logging.info("Writing results to %s", results_file_path)
     with open(results_file_path, "w") as results_file:

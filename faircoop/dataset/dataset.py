@@ -166,7 +166,7 @@ class Dataset(ABC):
         return subset, subset_y
 
     def sample_selfish_stratified(self, budget: int, attribute: str, random_seed: Optional[int] = None, oversample: bool = False):
-        assert attribute in self.protected_attributes, "Attribute is not protected!"
+        assert attribute in self.protected_attributes, f"Attribute is not protected {self.protected_attributes}!"
 
         X_0 = self.features.copy()
         X_0 = X_0[X_0[attribute] == 0]

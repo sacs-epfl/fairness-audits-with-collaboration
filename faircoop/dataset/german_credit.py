@@ -12,7 +12,8 @@ class GermanCreditDataset(Dataset):
         self.labels = pd.read_csv(os.path.join("data", self.get_name(), "labels.csv"))
         self.logger.info("German Credit dataset loaded (rows: %d)", len(self.features))
 
-        self.protected_attributes = ["sex", "age"]
+        # self.protected_attributes = ["sex", "age"]
+        self.protected_attributes = ['age', 'sex', 'marital_status', 'own_telephone', 'employment']
         self.compute_ground_truth_dp()
         self.compute_subspace_probabilities()
 

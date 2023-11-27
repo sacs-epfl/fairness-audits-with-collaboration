@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 
 def demographic_parity(features, labels, attribute) -> float:
@@ -115,8 +116,18 @@ def demographic_parity_unbiased(
         prob_subspace_0 = all_probs[base_agent][n_attrs][agent_id_str][binary_string][0]
         prob_subspace_1 = all_probs[base_agent][n_attrs][agent_id_str][binary_string][1]
 
-        prob_y_given_1 += subspaces_1[i][1].mean().item() * prob_subspace_1
-        prob_y_given_0 += subspaces_0[i][1].mean().item() * prob_subspace_0
+        # check if subspace is empty
+        if len(subspaces_1[i][1]) == 0:
+            prob_y_given_1 += 0
+            logging.info(f'Empty subspace for {attr}=1, {other_attrs} = {binary_string}')
+        else:
+            prob_y_given_1 += subspaces_1[i][1].mean().item() * prob_subspace_1
+        
+        if len(subspaces_0[i][1]) == 0:
+            prob_y_given_0 += 0
+            logging.info(f'Empty subspace for {attr}=0, {other_attrs} = {binary_string}')
+        else:
+            prob_y_given_0 += subspaces_0[i][1].mean().item() * prob_subspace_0
 
     dp_final = np.abs(prob_y_given_1 - prob_y_given_0).item()
 
