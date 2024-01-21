@@ -12,7 +12,7 @@ class FolktablesDataset(Dataset):
         self.labels = pd.read_csv(os.path.join("data", self.get_name(), "labels_bin.csv"))
         self.logger.info("Folktables dataset loaded (rows: %d)", len(self.features))
 
-        self.protected_attributes = ["SEX", "MAR"]
+        self.protected_attributes = ["SEX", "MAR", "AGEP", "NATIVITY", "MIG"]
         self.compute_ground_truth_dp()
         self.compute_subspace_probabilities()
 

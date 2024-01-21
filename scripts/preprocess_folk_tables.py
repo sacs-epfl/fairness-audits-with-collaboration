@@ -16,6 +16,9 @@ print("Loaded folk tables dataset (rows: %d)" % len(features))
 # Binarize features
 features['SEX'] = features['SEX'].apply(lambda x: 0 if x == 2 else 1)
 features['MAR'] = features['MAR'].apply(lambda x: 0 if x in [2, 3, 4, 5] else 1)
+features['AGEP'] = features['AGEP'].apply(lambda x: 0 if x <= 25 else 1)
+features['NATIVITY'] = features['NATIVITY'].apply(lambda x: 0 if x == 2 else 1)
+features['MIG'] = features['MIG'].apply(lambda x: 0 if x in [0, 2, 3] else 1)
 
 features = features.reset_index(drop=True)
 features.to_csv(os.path.join("..", "data", "folktables", "features_bin.csv"), index=False)

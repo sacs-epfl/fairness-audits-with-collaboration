@@ -83,6 +83,17 @@ class Dataset(ABC):
 
     # no independence assumption
     def compute_subspace_probabilities(self):
+
+        # Check if pickle file already exists
+        all_probs_file = os.path.join("data", self.get_name(), "all_probs.pkl")
+        all_ys_file = os.path.join("data", self.get_name(), "all_ys.pkl")
+
+        if os.path.exists(all_probs_file) and os.path.exists(all_ys_file):
+            self.logger.info("Loading subspace probabilities from pickle file...")
+            self.subspace_features_probabilities = pickle.load(open(all_probs_file, "rb"))
+            self.subspace_labels_probabilities = pickle.load(open(all_ys_file, "rb"))
+            return
+        
         n = n = len(self.protected_attributes)
 
         all_probs = dict()
@@ -150,6 +161,11 @@ class Dataset(ABC):
         
         self.subspace_features_probabilities = all_probs
         self.subspace_labels_probabilities = all_ys
+
+        # Save to pickle file
+        self.logger.info("Saving subspace probabilities to pickle file...")
+        pickle.dump(all_probs, open(all_probs_file, "wb"))
+        pickle.dump(all_ys, open(all_ys_file, "wb"))
 
     def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: Optional[int] = None, oversample: bool = False):
         assert attribute in self.protected_attributes, "Attribute is not protected!"

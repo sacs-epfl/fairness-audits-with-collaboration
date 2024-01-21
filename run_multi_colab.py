@@ -18,7 +18,6 @@ def run(info: Tuple[int, str], args):
     dataset = get_dataset(args.dataset)
     results: List = []
     budget, results_file_name = info
-    args.budget = budget
 
     for _ in range(args.repetitions):
         audit = Audit(args, dataset)
@@ -53,7 +52,7 @@ if __name__ == "__main__":
     processes = []
 
     if args.collaboration == "none":
-        comb = protected_attributes
+        comb = protected_attributes # comb stands for combination, see below
         args.attributes_to_audit = comb
         out_file_name = "multicolab_%s_%s_n%d_b%d_%s.csv" % (args.dataset, args.collaboration, len(comb), args.budget, ",".join(comb))
         p = Process(target=run, args=((args.budget, out_file_name), deepcopy(args)))

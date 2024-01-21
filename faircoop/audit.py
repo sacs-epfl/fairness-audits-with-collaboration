@@ -21,7 +21,7 @@ class Audit:
         self.num_agents: int = len(self.args.attributes_to_audit)
 
         if args.collaboration == "apriori" and args.sample != "stratified":
-            self.logger.info("Setting sampling method to stratified for a posteriori collaboration")
+            self.logger.info("Setting sampling method to stratified for a priori collaboration")
             self.args.sample = "stratified"
 
     def run(self):
