@@ -5,7 +5,7 @@ import logging
 
 def write_results(args, results, results_file_name: str, write_dir: str = "results"):
     if not os.path.exists(write_dir):
-        os.mkdir(write_dir)
+        os.makedirs(write_dir)
 
     agents: int = len(args.attributes_to_audit)
     results_file_path = os.path.join(write_dir, results_file_name)

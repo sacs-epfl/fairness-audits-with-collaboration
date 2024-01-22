@@ -26,7 +26,7 @@ def run(info: Tuple[int, str], args):
         if args.seed is not None:
             args.seed += 1
 
-    write_results(args, results, results_file_name, write_dir="results/multicolab_b%d" % budget)
+    write_results(args, results, results_file_name, write_dir=f"results/{args.dataset}/multicolab_b{budget}")
 
 
 if __name__ == "__main__":
@@ -45,6 +45,8 @@ if __name__ == "__main__":
 
     if args.dataset == "german_credit":
         protected_attributes = ['age', 'sex', 'marital_status', 'own_telephone', 'employment']
+    elif args.dataset == "folktables":
+        protected_attributes = ["SEX", "MAR", "AGEP", "NATIVITY", "MIG"]
     else:
         raise RuntimeError("Unknown dataset %s" % args.dataset)
 
