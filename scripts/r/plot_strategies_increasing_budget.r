@@ -1,6 +1,11 @@
+# install.packages("languageserver")
+
 library(ggplot2)
 library(dplyr)
 
+# dat <- read.csv("../../results/synthetic_stratified_n2.csv")
+# dat <- read.csv("../../results/synthetic_uniform_n2.csv")
+# dat <- read.csv("../../results/german_credit_stratified_n2.csv")
 dat <- read.csv("../../results/propublica_stratified_n2.csv")
 
 dat <- dat %>%
@@ -23,4 +28,7 @@ p <- ggplot(dat, aes(x=budget, y=dp_error_mean, shape=collaboration, group=colla
      ylab("DP Error") +
      facet_wrap(~ agent)
 
-ggsave("../../results/budget.pdf", p, width=5.7, height=3)
+# ggsave("../../results/budget_syn_uniform_aposteriori.pdf", p, width=5.7, height=3)
+# ggsave("../../results/budget_syn_newub.pdf", p, width=5.7, height=3)
+# ggsave("../../results/budget_gc_newub_full.pdf", p, width=5.7, height=3)
+ggsave("../../results/budget_propublica_newub_full_trial.pdf", p, width=5.7, height=3)
