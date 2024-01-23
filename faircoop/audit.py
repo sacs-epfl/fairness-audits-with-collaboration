@@ -45,6 +45,16 @@ class Audit:
                     raise RuntimeError(f"Sample strategy {self.args.sample} with {self.args.collaboration} not supported!")
                 
                 queries_per_agent.append((x_sampled, y_sampled))
+            
+            elif self.args.sample == "neyman":
+                if self.args.collaboration in ["none", "aposteriori"]:
+                    x_sampled, y_sampled = self.dataset.sample_selfish_neyman(
+                        self.args.budget, attribute, random_seed=random_seed, oversample=self.args.oversample)
+                else:
+                    raise RuntimeError(f"Sample strategy {self.args.sample} with {self.args.collaboration} not supported!")
+                
+                queries_per_agent.append((x_sampled, y_sampled))
+            
             elif self.args.sample == "stratified":
                 if self.args.collaboration in ["none", "aposteriori"]:
                     x_sampled, y_sampled = self.dataset.sample_selfish_stratified(

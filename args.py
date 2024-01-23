@@ -3,7 +3,7 @@ import argparse
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sample", type=str, default="stratified", choices=["uniform", "stratified"])
+    parser.add_argument("--sample", type=str, default="stratified", choices=["uniform", "stratified", "neyman"])
     parser.add_argument("--collaboration", type=str, default="none", choices=["none", "aposteriori", "apriori"])
     parser.add_argument("--attributes-to-audit", type=str, default=None, help="The attributes to audit - pick all attributes if not specified.")
     parser.add_argument("--dataset", type=str, default="synthetic", choices=["synthetic", "german_credit", "folktables", "propublica"])
