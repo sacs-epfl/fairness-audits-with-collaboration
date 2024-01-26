@@ -88,17 +88,20 @@ class Dataset(ABC):
         # Check if pickle file already exists
         all_probs_file = os.path.join("data", self.get_name(), "all_probs.pkl")
         all_ys_file = os.path.join("data", self.get_name(), "all_ys.pkl")
+        all_nks_file = os.path.join("data", self.get_name(), "all_nks.pkl")
 
         if os.path.exists(all_probs_file) and os.path.exists(all_ys_file):
             self.logger.info("Loading subspace probabilities from pickle file...")
             self.subspace_features_probabilities = pickle.load(open(all_probs_file, "rb"))
             self.subspace_labels_probabilities = pickle.load(open(all_ys_file, "rb"))
+            self.subspace_sizes = pickle.load(open(all_nks_file, "rb"))
             return
         
         n = n = len(self.protected_attributes)
 
         all_probs = dict()
         all_ys = dict()
+        all_nks = dict()
 
         for base_agent in range(n): # Base agent
             print(f'Working on base agent {base_agent}')
@@ -106,10 +109,12 @@ class Dataset(ABC):
             possible_collaborators = [i for i in range(n) if i != base_agent]
             all_probs[base_agent] = dict()
             all_ys[base_agent] = dict()
+            all_nks[base_agent] = dict()
 
             # initialize the dict for k = 0
             all_probs[base_agent] = {0:{'':{'':{}}}}
             all_ys[base_agent] = {0:{'':{'':{}}}}
+            all_nks[base_agent] = {0:{'':{'':{}}}}
 
             X_0 = self.features.copy()
             X_0 = X_0[X_0[base_attr] == 0]
@@ -117,6 +122,7 @@ class Dataset(ABC):
 
             all_probs[base_agent][0][''][''][0] = 1
             all_ys[base_agent][0][''][''][0] = y_0.mean().item()
+            all_nks[base_agent][0][''][''][0] = len(X_0)
 
             X_1 = self.features.copy()
             X_1 = X_1[X_1[base_attr] == 1]
@@ -124,12 +130,14 @@ class Dataset(ABC):
 
             all_probs[base_agent][0][''][''][1] = 1
             all_ys[base_agent][0][''][''][1] = y_1.mean().item()
+            all_nks[base_agent][0][''][''][1] = len(X_1)
 
             for k in range(1, n): # Number of collaborators, 1 to n-1
 
                 print(f'Working on k={k}')
                 all_probs[base_agent][k] = dict()
                 all_ys[base_agent][k] = dict()
+                all_nks[base_agent][k] = dict()
 
                 agent_combinations_list = list(combinations(possible_collaborators, k))
 
@@ -138,6 +146,7 @@ class Dataset(ABC):
 
                     all_probs[base_agent][k][agent_comb_str] = dict()
                     all_ys[base_agent][k][agent_comb_str] = dict()
+                    all_nks[base_agent][k][agent_comb_str] = dict()
 
                     total_strings = 2 ** (k)
                     binary_strings = [format(i, f'0{k}b') for i in range(total_strings)]
@@ -148,6 +157,7 @@ class Dataset(ABC):
 
                         all_probs[base_agent][k][agent_comb_str][binary_string] = dict()
                         all_ys[base_agent][k][agent_comb_str][binary_string] = dict()
+                        all_nks[base_agent][k][agent_comb_str][binary_string] = dict()
 
                         pairs = [(attrs[i], int(binary_string[i])) for i in range(k)]
 
@@ -160,6 +170,7 @@ class Dataset(ABC):
                         
                         all_probs[base_agent][k][agent_comb_str][binary_string][0] = len(X_temp) / len(X_0)
                         all_ys[base_agent][k][agent_comb_str][binary_string][0] = y_tmp.mean().item()
+                        all_nks[base_agent][k][agent_comb_str][binary_string][0] = len(X_temp)
                         
                         X_temp = X_1.copy()
                         for attr, val in pairs:
@@ -169,14 +180,17 @@ class Dataset(ABC):
                         
                         all_probs[base_agent][k][agent_comb_str][binary_string][1] = len(X_temp) / len(X_1)
                         all_ys[base_agent][k][agent_comb_str][binary_string][1] = y_tmp.mean().item()
+                        all_nks[base_agent][k][agent_comb_str][binary_string][1] = len(X_temp)
         
         self.subspace_features_probabilities = all_probs
         self.subspace_labels_probabilities = all_ys
+        self.subspace_sizes = all_nks
 
         # Save to pickle file
         self.logger.info("Saving subspace probabilities to pickle file...")
         pickle.dump(all_probs, open(all_probs_file, "wb"))
         pickle.dump(all_ys, open(all_ys_file, "wb"))
+        pickle.dump(all_nks, open(all_nks_file, "wb"))
 
     def sample_selfish_uniform(self, budget: int, attribute: str, random_seed: Optional[int] = None, oversample: bool = False):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
@@ -304,6 +318,48 @@ class Dataset(ABC):
 
         return subset, subset_y
 
+    def sample_coordinated_neyman(self, attributes: List[str], budget_list: List[int], random_seed: Optional[int] = None):
+        n_attrs = len(attributes)
+
+        n_subspaces = 2 ** n_attrs
+        binary_strings = [format(i, f'0{n_attrs}b') for i in range(n_subspaces)]
+
+        agent_ids = [(self.protected_attributes.index(a), a) for a in attributes]
+        agent_ids.sort()
+        attributes = [a for _, a in agent_ids] # sorted accordings to ids
+
+        subspaces = []
+        for binary_string in binary_strings:
+            pairs = [(attributes[i], int(binary_string[i])) for i in range(n_attrs)]
+
+            X_temp = self.features.copy()
+            for attr, val in pairs:
+                X_temp = X_temp[X_temp[attr] == val]
+
+            y_tmp = self.labels.loc[X_temp.index]
+            subspaces.append((X_temp, y_tmp))
+
+        sub_ns = budget_list  
+
+        # sample sub_n from each subspace
+        subset = pd.DataFrame()
+        subset_y = pd.DataFrame()
+        for i, (X_i, y_i) in enumerate(subspaces):
+            # check if subspace has sufficient samples
+            if len(X_i) < sub_ns[i]:
+                raise ValueError('Subspace has insufficient samples')
+
+            if random_seed is not None:
+                subset_i = X_i.sample(n=sub_ns[i], random_state=random_seed)
+            else:
+                subset_i = X_i.sample(n=sub_ns[i])
+            subset_i_y = y_i.loc[subset_i.index]
+            
+            subset = pd.concat([subset, subset_i], ignore_index=True)
+            subset_y = pd.concat([subset_y, subset_i_y], ignore_index=True)
+
+        return subset, subset_y
+
     def compute_ground_truth_dp(self):
         for protected_attribute in self.protected_attributes:
             dp: float = demographic_parity(self.features, self.labels, protected_attribute)
@@ -388,6 +444,68 @@ class Dataset(ABC):
         # Résolution du problème
         prob.solve(solver=cp.GUROBI)  # ou tout autre solveur pris en charge par CVXPY
         return [int(n_minority.value), int(n_majority.value)]
+
+    def solve_collab(self, attributes: List[str], total_budget: int):
+        M = len(attributes)
+        n = total_budget
+
+        total_strings = 2 ** (M)
+        binary_strings = [format(i, f'0{M}b') for i in range(total_strings)]
+
+        agent_ids = [(self.protected_attributes.index(a), a) for a in attributes]
+        agent_ids.sort()
+        agent_id_str = ''.join([str(elem) for elem, _ in agent_ids])
+        attributes = [a for _, a in agent_ids] # sorted accordings to ids
+
+        N_ks = list()
+        multipliers = list()
+
+        for S_k in binary_strings:
+
+            # pick base agent
+            base_agent = int(agent_id_str[0])
+            base_agent_value = int(S_k[0])
+
+            remanining_agents = agent_id_str[1:]
+            remanining_agents_values = S_k[1:]
+
+            prob_y_given_S_k = self.subspace_labels_probabilities[base_agent][M-1][remanining_agents][remanining_agents_values][base_agent_value]
+            sigma_k = prob_y_given_S_k * (1 - prob_y_given_S_k)
+            N_k = self.subspace_sizes[base_agent][M-1][remanining_agents][remanining_agents_values][base_agent_value]
+            N_ks.append(N_k)
+
+            multiplier = 0
+
+            for i in range(M):
+                base_agent = int(agent_id_str[i])
+                base_agent_value = int(S_k[i])
+
+                remanining_agents = agent_id_str[:i] + agent_id_str[i+1:]
+                remanining_agents_values = S_k[:i] + S_k[i+1:]
+
+                prob_X_given_Xi = self.subspace_features_probabilities[base_agent][M-1][remanining_agents][remanining_agents_values][base_agent_value]
+                multiplier += prob_X_given_Xi**2
+            
+            multiplier *= sigma_k**2
+            multipliers.append(multiplier)
+
+        # solve the problem
+        n_ks = []
+        for i in range(total_strings):
+            if N_ks[i] > 0:
+                n_ks.append(cp.Variable(integer=True))
+            else:
+                n_ks.append(cp.Parameter(integer=True))
+                n_ks[-1].value = 0
+
+        objective = cp.Minimize(sum([multipliers[i]*(cp.inv_pos(n_ks[i]) - cp.inv_pos(N_ks[i])) for i in range(total_strings) if N_ks[i] > 0]))
+        # all n_ks >= 1 or 0 and sum to n
+        constraints = [n_ks[i] >= 1 for i in range(total_strings) if N_ks[i] > 0] + [sum(n_ks) == n]
+        prob = cp.Problem(objective, constraints)
+        prob.solve(solver=cp.GUROBI)
+
+        return [int(n_k.value) for n_k in n_ks]
+
 
     @abstractmethod
     def load_dataset(self):

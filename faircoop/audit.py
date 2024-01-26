@@ -20,9 +20,26 @@ class Audit:
 
         self.num_agents: int = len(self.args.attributes_to_audit)
 
-        if args.collaboration == "apriori" and args.sample != "stratified":
+        if args.collaboration == "apriori" and args.sample not in ["stratified", "neyman"]:
             self.logger.info("Setting sampling method to stratified for a priori collaboration")
             self.args.sample = "stratified"
+
+    def _distribute_values(self, input_list: List, num_agents: int) -> List[List]:
+        # Distribute the values to the agents
+        distributed_values = [[0 for _ in range(len(input_list))] for _ in range(num_agents)]
+        for i, value in enumerate(input_list):
+            equal_share = value // num_agents
+            
+            for k in range(num_agents):
+                distributed_values[k][i] += equal_share
+            
+            remainder = value % num_agents
+            for k in range(remainder):
+                distributed_values[k][i] += 1
+
+        assert sum([sum(d) for d in distributed_values]) == sum(input_list)
+
+        return distributed_values
 
     def run(self):
         self.logger.info("Running audit with %s sampling and collaboration mode %s and unbiasing %s: (seed: %s)",
@@ -30,6 +47,12 @@ class Audit:
 
         queries_per_agent: List[Tuple[List, List]] = []
         collab_attributes = self.args.attributes_to_audit
+
+        if self.args.sample == "neyman" and self.args.collaboration == "apriori":
+            subspace_wise_budgets = self.dataset.solve_collab(self.args.attributes_to_audit, self.args.budget*self.num_agents)
+            self.logger.debug("Subspace-wise budgets: %s %d", subspace_wise_budgets, sum(subspace_wise_budgets))
+            agentwise_subspace_budgets = self._distribute_values(subspace_wise_budgets, self.num_agents)
+
         for agent, attribute in enumerate(self.args.attributes_to_audit):
             self.logger.info("Agent %d auditing attribute %s of black box...", agent, attribute)
             
@@ -50,8 +73,9 @@ class Audit:
                 if self.args.collaboration in ["none", "aposteriori"]:
                     x_sampled, y_sampled = self.dataset.sample_selfish_neyman(
                         self.args.budget, attribute, random_seed=random_seed, oversample=self.args.oversample)
-                else:
-                    raise RuntimeError(f"Sample strategy {self.args.sample} with {self.args.collaboration} not supported!")
+                elif self.args.collaboration == "apriori":
+                    x_sampled, y_sampled = self.dataset.sample_coordinated_neyman(
+                        collab_attributes, agentwise_subspace_budgets[agent], random_seed=random_seed)
                 
                 queries_per_agent.append((x_sampled, y_sampled))
             
@@ -62,8 +86,6 @@ class Audit:
                 elif self.args.collaboration == "apriori":
                     x_sampled, y_sampled = self.dataset.sample_coordinated_stratified(
                         collab_attributes, self.args.budget, random_seed, oversample=self.args.oversample)
-                else:
-                    raise RuntimeError("Sample strategy not supported!")
                                 
                 queries_per_agent.append((x_sampled, y_sampled))
 

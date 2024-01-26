@@ -119,13 +119,13 @@ def demographic_parity_unbiased(
         # check if subspace is empty
         if len(subspaces_1[i][1]) == 0:
             prob_y_given_1 += 0
-            logging.info(f'Empty subspace for {attr}=1, {other_attrs} = {binary_string}')
+            logging.debug(f'Empty subspace for {attr}=1, {other_attrs} = {binary_string}')
         else:
             prob_y_given_1 += subspaces_1[i][1].mean().item() * prob_subspace_1
         
         if len(subspaces_0[i][1]) == 0:
             prob_y_given_0 += 0
-            logging.info(f'Empty subspace for {attr}=0, {other_attrs} = {binary_string}')
+            logging.debug(f'Empty subspace for {attr}=0, {other_attrs} = {binary_string}')
         else:
             prob_y_given_0 += subspaces_0[i][1].mean().item() * prob_subspace_0
 
