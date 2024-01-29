@@ -20,9 +20,11 @@ class Audit:
 
         self.num_agents: int = len(self.args.attributes_to_audit)
 
-        if args.collaboration == "apriori" and args.sample not in ["stratified", "neyman"]:
-            self.logger.info("Setting sampling method to stratified for a priori collaboration")
-            self.args.sample = "stratified"
+        if self.args.unbias_mean and self.args.collaboration != "apriori":
+            raise RuntimeError("Unbiasing only supported for apriori collaboration!")
+        
+        if self.args.unbias_mean and self.args.collaboration == "apriori" and self.args.sample == "uniform":
+            raise RuntimeError("Unbiasing not supported for apriori collaboration with uniform sampling!")
 
     def _distribute_values(self, input_list: List, num_agents: int) -> List[List]:
         # Distribute the values to the agents
@@ -49,7 +51,10 @@ class Audit:
         collab_attributes = self.args.attributes_to_audit
 
         if self.args.sample == "neyman" and self.args.collaboration == "apriori":
-            subspace_wise_budgets = self.dataset.solve_collab(self.args.attributes_to_audit, self.args.budget*self.num_agents)
+            if not self.dataset.is_solved():
+                self.dataset.solve_collab(self.args.attributes_to_audit, self.args.budget*self.num_agents)
+            
+            subspace_wise_budgets = self.dataset.subspace_wise_budgets
             self.logger.debug("Subspace-wise budgets: %s %d", subspace_wise_budgets, sum(subspace_wise_budgets))
             agentwise_subspace_budgets = self._distribute_values(subspace_wise_budgets, self.num_agents)
 
@@ -61,7 +66,7 @@ class Audit:
             self.agentwise_used_seeds.append(random_seed)
             
             if self.args.sample == "uniform":
-                if self.args.collaboration in ["none", "aposteriori"]:
+                if self.args.collaboration in ["none", "aposteriori", "apriori"]:
                     x_sampled, y_sampled = self.dataset.sample_selfish_uniform(
                         self.args.budget, attribute, random_seed=random_seed, oversample=self.args.oversample)
                 else:

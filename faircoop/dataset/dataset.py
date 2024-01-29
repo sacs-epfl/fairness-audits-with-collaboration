@@ -22,6 +22,7 @@ class Dataset(ABC):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.subspace_features_probabilities = None
         self.subspace_labels_probabilities = None
+        self.subspace_wise_budgets = None
 
     # with independence assumption
     def compute_subspace_probabilities_independent(self):
@@ -504,9 +505,11 @@ class Dataset(ABC):
         prob = cp.Problem(objective, constraints)
         prob.solve(solver=cp.GUROBI)
 
-        return [int(n_k.value) for n_k in n_ks]
+        self.subspace_wise_budgets = [int(n_k.value) for n_k in n_ks]
 
-
+    def is_solved(self):
+        return self.subspace_wise_budgets is not None
+    
     @abstractmethod
     def load_dataset(self):
         pass

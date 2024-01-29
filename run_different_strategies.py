@@ -15,6 +15,10 @@ logging.basicConfig(level=logging.INFO)
 
 def run(info: Tuple[str, bool, List[int], str], args):
     dataset = get_dataset(args.dataset)
+
+    if args.sample == "neyman" and args.collaboration == "apriori":
+        dataset.solve_collab(args.attributes_to_audit, args.budget * len(args.attributes_to_audit))
+
     results: List = []
     collaboration, should_unbias, budget, results_file_name = info
     if should_unbias:
@@ -30,7 +34,8 @@ def run(info: Tuple[str, bool, List[int], str], args):
         if args.seed is not None:
             args.seed += 1
 
-    write_results(args, results, results_file_name)
+    write_dir = os.path.join("results", args.dataset)
+    write_results(args, results, results_file_name, write_dir)
 
 
 if __name__ == "__main__":
@@ -42,25 +47,29 @@ if __name__ == "__main__":
         budgets = [100, 200, 400, 800, 1600, 3200, 6400]
         # budgets = [100, 1000, 3000, 7000, 10000]
     elif args.dataset == "german_credit":
-        budgets = [50, 100, 150, 200, 250, 500, 750, 1000]
-        # budgets = [50, 100, 150, 200, 250]
+        # budgets = [50, 100, 150, 200, 250, 500, 750, 1000]
+        budgets = [50, 100, 150, 200, 250]
     elif args.dataset == "propublica":
         # budgets = [50, 100, 150, 200, 250]
-        budgets = [100, 200, 400, 800, 1600, 3200, 6000]
+        # budgets = [100, 200, 400, 800, 1600, 3200, 6000]
+        budgets = [100, 250, 500, 750, 1000]
     elif args.dataset == "folktables":
-        budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+        # budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+        budgets = [100, 250, 500, 750, 1000]
     else:
         raise RuntimeError("Unknown dataset %s" % args.dataset)
 
     result_csv_files = []
     processes = []
 
-    # for stratified
-    to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
-
     # for uniform
-    # to_run = [("none", False), ("aposteriori", False)]
-    # assert args.sample == "uniform", "Only uniform sampling supported for with this to_run!"
+    to_run = [("none", False), ("aposteriori", False), ("apriori", False)]
+
+    # for stratified
+    # to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
+
+    # for neyman
+    # to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
 
     for info in to_run:
         for budget in budgets:
@@ -73,7 +82,7 @@ if __name__ == "__main__":
             p.start()
             processes.append(p)
 
-            result_csv_files.append(os.path.join("results", out_file_name))
+            result_csv_files.append(os.path.join("results", args.dataset, out_file_name))
 
     print("Running %d processes (budgets: %s)..." % (len(processes), budgets))
 
@@ -81,5 +90,11 @@ if __name__ == "__main__":
         p.join()
 
     print("Processes done - combining results")
-    output_file_name = os.path.join("results", "%s_%s_n%d.csv" % (args.dataset, args.sample, agents))
+
+    output_dir = os.path.join("results", args.dataset)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    output_file_name = os.path.join(output_dir, "merged_%s_%s_n%d.csv" % (args.dataset, args.sample, agents))
     merge_csv_files(result_csv_files, output_file_name)
