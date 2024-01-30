@@ -367,7 +367,7 @@ class Dataset(ABC):
             self.ground_truth_dps[protected_attribute] = dp
             self.logger.debug("Ground truth DP of %s: %f" % (protected_attribute, dp))
 
-    def _sample_subspace_with_limit(self, subspaces_sizes_avail: List[int], subspace_sizes_req: int):
+    def _sample_subspace_with_limit(self, subspaces_sizes_avail: List[int], subspace_sizes_req: List[int]):
         """
         PARAMETERS
             subspaces_sizes_avail: List[int]
@@ -381,6 +381,7 @@ class Dataset(ABC):
         assert len(subspaces_sizes_avail) == len(subspace_sizes_req), 'Incorrect lists passed'
         
         logging.debug(f'subspaces_sizes_avail: {subspaces_sizes_avail}')
+        logging.debug(f'subspace_sizes_req: {subspace_sizes_req}')
         # total number of subspaces
         n_total = len(subspaces_sizes_avail)
         # total number of samples to be sampled across all subspaces
