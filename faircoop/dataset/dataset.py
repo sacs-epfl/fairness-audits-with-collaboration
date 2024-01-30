@@ -380,8 +380,8 @@ class Dataset(ABC):
         """
         assert len(subspaces_sizes_avail) == len(subspace_sizes_req), 'Incorrect lists passed'
         
-        logging.debug(f'subspaces_sizes_avail: {subspaces_sizes_avail}')
-        logging.debug(f'subspace_sizes_req: {subspace_sizes_req}')
+        self.logger.debug(f'subspaces_sizes_avail: {subspaces_sizes_avail}')
+        self.logger.debug(f'subspace_sizes_req: {subspace_sizes_req}')
         # total number of subspaces
         n_total = len(subspaces_sizes_avail)
         # total number of samples to be sampled across all subspaces
@@ -390,7 +390,7 @@ class Dataset(ABC):
             raise ValueError('Not enough samples in dataset')
         
         n_rem = n_total
-        logging.debug(f'subspace_sizes_req: {subspace_sizes_req}')
+        self.logger.debug(f'subspace_sizes_req: {subspace_sizes_req}')
 
         subspaces_size_sampled = [-1] * n_total
         priority_queue = []
@@ -429,7 +429,7 @@ class Dataset(ABC):
         assert -1 not in subspaces_size_sampled, 'Mistake in the algorithm'
         assert sum(subspaces_size_sampled) == budget_total, 'Mistake in the algorithm'
         
-        logging.debug(f'subspaces_size_sampled: {subspaces_size_sampled}')
+        self.logger.debug(f'subspaces_size_sampled: {subspaces_size_sampled}')
         return subspaces_size_sampled
 
     def _solve_no_collab(self, n, p_positive_knowing_minority, p_positive_knowing_majority):
