@@ -10,7 +10,7 @@ from faircoop.audit import Audit
 from faircoop.dataset import get_dataset
 from write_results import merge_csv_files
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARNING)
 
 
 def write_results(args, results, results_file_name: str):
@@ -42,7 +42,7 @@ def run(attribute_0: str, attribute_1: str, results_file_name: str, args):
         args.unbias_mean = True
 
     for rep in range(args.repetitions):
-        if rep % 1 == 0:
+        if rep % 50 == 0:
             logging.error("[%s - %s] at repetition %d", attribute_0, attribute_1, rep)
         audit = Audit(args, dataset)
         audit.run()
