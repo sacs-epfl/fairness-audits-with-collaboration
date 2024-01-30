@@ -56,10 +56,17 @@ if __name__ == "__main__":
 
     if args.dataset in ["synthetic", "german_credit"]:
         args.budget = 100
+        args.repetitions = 1000
+    elif args.dataset == "propublica":
+        args.budget = 250
+        args.repetitions = 500
     elif args.dataset == "folktables":
         args.budget = 500
+        args.repetitions = 200
     else:
         raise RuntimeError("Unsupported dataset %s" % args.dataset)
+
+    args.oversample = True
 
     result_csv_files = []
     dataset = get_dataset(args.dataset)
@@ -68,8 +75,8 @@ if __name__ == "__main__":
     for collaboration in ["apriori"]:
         args.collaboration = collaboration
         processes = []
-        for attribute_0 in list(dataset.features.columns.values):
-            for attribute_1 in list(dataset.features.columns.values):
+        for attribute_0 in list(dataset.protected_attributes):
+            for attribute_1 in list(dataset.protected_attributes):
                 out_file_name = "combinations_n2_%s_%s_%s_%s.csv" % (args.dataset, collaboration, attribute_0, attribute_1)
                 p = Process(target=run, args=(attribute_0, attribute_1, out_file_name, deepcopy(args)))
                 p.start()
