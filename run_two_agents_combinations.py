@@ -54,8 +54,10 @@ def run(attribute_0: str, attribute_1: str, results_file_name: str, args):
 if __name__ == "__main__":
     args = get_args()
 
-    if args.dataset == "synthetic":
+    if args.dataset in ["synthetic", "german_credit"]:
         args.budget = 100
+    elif args.dataset == "folktables":
+        args.budget = 500
     else:
         raise RuntimeError("Unsupported dataset %s" % args.dataset)
 
@@ -63,7 +65,7 @@ if __name__ == "__main__":
     dataset = get_dataset(args.dataset)
     dataset.load_dataset()
 
-    for collaboration in ["aposteriori", "apriori"]:
+    for collaboration in ["apriori"]:
         args.collaboration = collaboration
         processes = []
         for attribute_0 in list(dataset.features.columns.values)[:3]:
