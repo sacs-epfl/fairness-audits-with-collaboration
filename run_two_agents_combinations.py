@@ -41,7 +41,9 @@ def run(attribute_0: str, attribute_1: str, results_file_name: str, args):
     if args.collaboration == "apriori" and attribute_0 != attribute_1:
         args.unbias_mean = True
 
-    for _ in range(args.repetitions):
+    for rep in range(args.repetitions):
+        if rep % 1 == 0:
+            logging.error("[%s - %s] at repetition %d", attribute_0, attribute_1, rep)
         audit = Audit(args, dataset)
         audit.run()
         results += audit.results
