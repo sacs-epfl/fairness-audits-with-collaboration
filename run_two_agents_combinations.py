@@ -68,8 +68,8 @@ if __name__ == "__main__":
     for collaboration in ["apriori"]:
         args.collaboration = collaboration
         processes = []
-        for attribute_0 in list(dataset.features.columns.values)[:3]:
-            for attribute_1 in list(dataset.features.columns.values)[:3]:
+        for attribute_0 in list(dataset.features.columns.values):
+            for attribute_1 in list(dataset.features.columns.values):
                 out_file_name = "combinations_n2_%s_%s_%s_%s.csv" % (args.dataset, collaboration, attribute_0, attribute_1)
                 p = Process(target=run, args=(attribute_0, attribute_1, out_file_name, deepcopy(args)))
                 p.start()
