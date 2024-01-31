@@ -6,6 +6,7 @@ import os
 import pickle
 import heapq
 import cvxpy as cp
+import random
 
 import pandas as pd
 
@@ -378,6 +379,7 @@ class Dataset(ABC):
         RETURNS
             list of sizes of subspaces that were sampled by oversampling equally from all subspaces
         """
+        rng = random.Random(seed=0)
         assert len(subspaces_sizes_avail) == len(subspace_sizes_req), 'Incorrect lists passed'
         
         self.logger.debug(f'subspaces_sizes_avail: {subspaces_sizes_avail}')
@@ -413,7 +415,9 @@ class Dataset(ABC):
                 # remove idx from yet_unsampled
                 yet_unsampled.remove(idx)
                 # distribute the remaining samples to other subspaces
-                for i in yet_unsampled:
+                shuffled_list = list(yet_unsampled)
+                rng.shuffle(shuffled_list)
+                for i in shuffled_list:
                     subspace_sizes_req[i] += n_left_each
                     if extra > 0:
                         subspace_sizes_req[i] += 1
