@@ -108,6 +108,31 @@ class Audit:
                 self.results.append((used_seed if used_seed is not None else -1, self.args.budget, agent,
                                      attribute, dp_error))
         elif self.args.collaboration in ["aposteriori", "apriori"]:
+            total_strata_allocations = {}
+            for i in range(2 ** len(self.dataset.protected_attributes)):
+                total_strata_allocations[i] = 0
+
+            for agent_index in range(len(queries_per_agent)):
+                # print("Agent %d allocation:" % agent_index)
+                strata_allocations = {}
+                for i in range(2 ** len(self.dataset.protected_attributes)):
+                    strata_allocations[i] = 0
+
+                for idx, query in queries_per_agent[agent_index][0].iterrows():
+                    bitset = []
+                    for attribute in self.dataset.protected_attributes:
+                        bitset.append(getattr(query, attribute))
+                    bit_string = ''.join(str(bit) for bit in bitset)
+                    strata_allocations[int(bit_string, 2)] += 1
+                    total_strata_allocations[int(bit_string, 2)] += 1
+
+                # for i in range(2 ** len(self.dataset.protected_attributes)):
+                #     print("Strata %d: %d" % (i, strata_allocations[i]))
+
+            print("Total allocation:")
+            for i in range(2 ** len(self.dataset.protected_attributes)):
+                print("%s,%s,%d,%d" % (self.args.sample, self.args.collaboration, i, total_strata_allocations[i]))
+
             # Combine all queries and then compute the DP error per agent
             x_all = pd.concat([x_agent for x_agent, _ in queries_per_agent], ignore_index=True)
             y_all = pd.concat([y_agent for _, y_agent in queries_per_agent], ignore_index=True)
