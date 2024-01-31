@@ -198,7 +198,7 @@ class Dataset(ABC):
         assert attribute in self.protected_attributes, "Attribute is not protected!"
 
         # checks if there are enough samples in the dataset
-        budget = self._sample_subspace_with_limit([len(self.features)], [budget])[0]
+        budget = self._sample_subspace_with_limit([len(self.features)], [budget], random_seed)[0]
 
         if random_seed is None:
             subset = self.features.sample(n=budget)
@@ -223,7 +223,7 @@ class Dataset(ABC):
         sub_n = budget // 2
 
         if oversample:
-            sub_n1, sub_n0 = self._sample_subspace_with_limit([len(X_1), len(X_0)], [sub_n]*2)
+            sub_n1, sub_n0 = self._sample_subspace_with_limit([len(X_1), len(X_0)], [sub_n]*2, random_seed)
         else:
             sub_n1 = sub_n0 = sub_n
 
@@ -260,7 +260,7 @@ class Dataset(ABC):
         sub_n0, sub_n1 = self._solve_no_collab(budget, p_positive_knowing_minority, p_positive_knowing_majority)
 
         if oversample:
-            sub_n0, sub_n1 = self._sample_subspace_with_limit([len(X_0), len(X_1)], [sub_n0, sub_n1])
+            sub_n0, sub_n1 = self._sample_subspace_with_limit([len(X_0), len(X_1)], [sub_n0, sub_n1], random_seed)
 
         if random_seed is None:
             subset_1 = X_1.sample(n=sub_n1)
@@ -297,7 +297,7 @@ class Dataset(ABC):
 
         len_subspaces = [len(X_i) for X_i, _ in subspaces]  
         if oversample:
-            sub_ns = self._sample_subspace_with_limit(len_subspaces, [sub_n]*n_subspaces)
+            sub_ns = self._sample_subspace_with_limit(len_subspaces, [sub_n]*n_subspaces, random_seed)
         else:
             sub_ns = [sub_n] * n_subspaces
 
@@ -368,7 +368,7 @@ class Dataset(ABC):
             self.ground_truth_dps[protected_attribute] = dp
             self.logger.debug("Ground truth DP of %s: %f" % (protected_attribute, dp))
 
-    def _sample_subspace_with_limit(self, subspaces_sizes_avail: List[int], subspace_sizes_req: List[int]):
+    def _sample_subspace_with_limit(self, subspaces_sizes_avail: List[int], subspace_sizes_req: List[int], random_seed: Optional[int] = None):
         """
         PARAMETERS
             subspaces_sizes_avail: List[int]
@@ -379,7 +379,10 @@ class Dataset(ABC):
         RETURNS
             list of sizes of subspaces that were sampled by oversampling equally from all subspaces
         """
-        rng = random.Random(seed=0)
+        if random_seed is not None:
+            rng = random.Random(random_seed)
+        else:
+            rng = random.Random(0)
         assert len(subspaces_sizes_avail) == len(subspace_sizes_req), 'Incorrect lists passed'
         
         self.logger.debug(f'subspaces_sizes_avail: {subspaces_sizes_avail}')
