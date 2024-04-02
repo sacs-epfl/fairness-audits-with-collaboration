@@ -5,7 +5,10 @@ import os
 
 from faircoop.dataset import get_dataset
 
-DATASETS = ["synthetic"]
+# DATASETS = ["german_credit"]
+# DATASETS = ["propublica"]
+DATASETS = ["folktables"]
+# DATASETS = ["folktables", "german_credit", "propublica"]
 
 if __name__ == "__main__":
     if not os.path.exists("results"):

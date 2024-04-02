@@ -63,10 +63,10 @@ if __name__ == "__main__":
     processes = []
 
     # for uniform
-    to_run = [("none", False), ("aposteriori", False), ("apriori", False)]
+    # to_run = [("none", False), ("aposteriori", False), ("apriori", False)]
 
-    # for stratified
-    # to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
+    # for stratified and neyman
+    to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
 
     # for neyman
     # to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
