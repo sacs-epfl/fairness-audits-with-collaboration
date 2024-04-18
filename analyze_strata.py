@@ -3,7 +3,7 @@ from itertools import combinations
 
 from faircoop.dataset import get_dataset
 
-DATASETS = ["german_credit", "propublica"]
+DATASETS = ["german_credit", "propublica", "folktables"]
 
 
 if __name__ == "__main__":
