@@ -1,5 +1,8 @@
 # Fairness Auditing with Multi-Agent Collaboration
 
+![audits-full2](https://github.com/user-attachments/assets/47bb7be4-231d-4932-9013-b370e5d65bd1)
+
+
 This repository hosts the code for our work titled *"Fairness Auditing with Multi-agent Collaboration"* which will appear in the *Proceedings of the 27th European Conference on Artificial Intelligence (ECAI), 2024*.
 
 ## Setting up the python environment
