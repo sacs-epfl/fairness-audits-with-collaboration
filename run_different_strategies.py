@@ -42,19 +42,11 @@ if __name__ == "__main__":
     args = get_args()
     agents = len(args.attributes_to_audit)
 
-    if args.dataset == "synthetic":
-        # budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-        budgets = [100, 200, 400, 800, 1600, 3200, 6400]
-        # budgets = [100, 1000, 3000, 7000, 10000]
-    elif args.dataset == "german_credit":
-        # budgets = [50, 100, 150, 200, 250, 500, 750, 1000]
+    if args.dataset == "german_credit":
         budgets = [50, 100, 150, 200, 250]
     elif args.dataset == "propublica":
-        # budgets = [50, 100, 150, 200, 250]
-        # budgets = [100, 200, 400, 800, 1600, 3200, 6000]
         budgets = [100, 250, 500, 750, 1000]
     elif args.dataset == "folktables":
-        # budgets = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
         budgets = [100, 250, 500, 750, 1000]
     else:
         raise RuntimeError("Unknown dataset %s" % args.dataset)
@@ -62,14 +54,12 @@ if __name__ == "__main__":
     result_csv_files = []
     processes = []
 
-    # for uniform
-    # to_run = [("none", False), ("aposteriori", False), ("apriori", False)]
-
-    # for stratified and neyman
-    to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
-
-    # for neyman
-    # to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
+    # set when to unbias the mean
+    # applicable for aprirori - neyman and stratified
+    if args.sample == "uniform":
+        to_run = [("none", False), ("aposteriori", False), ("apriori", False)]
+    else: # stratified or neyman
+        to_run = [("none", False), ("aposteriori", False), ("apriori", True)]
 
     for info in to_run:
         for budget in budgets:

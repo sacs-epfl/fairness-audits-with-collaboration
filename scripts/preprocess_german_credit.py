@@ -7,13 +7,21 @@ import pandas as pd
 from aif360.sklearn.datasets import fetch_german
 from sklearn.preprocessing import LabelEncoder
 
-if not os.path.exists(os.path.join("..", "data")):
-    os.mkdir(os.path.join("..", "data"))
+# Get the directory of the current script
+base_dir = os.path.dirname(os.path.abspath(__file__))
 
-if not os.path.exists(os.path.join("..", "data", "german_credit")):
-    os.mkdir(os.path.join("..", "data", "german_credit"))
+# Define the paths relative to the current script
+data_dir = os.path.join(base_dir, "..", "data")
+german_credit_dir = os.path.join(data_dir, "german_credit")
 
-print("Fetching German Credit dataset...")
+# Create the directories if they don't exist
+if not os.path.exists(data_dir):
+    os.mkdir(data_dir)
+
+if not os.path.exists(german_credit_dir):
+    os.mkdir(german_credit_dir)
+
+print("="*5, "Fetching German Credit dataset...", "="*5)
 dataset = fetch_german()
 # split into inputs and outputs
 
@@ -35,12 +43,12 @@ X['own_telephone'] = X['own_telephone'].apply(lambda x: 0 if x == 'none' else 1)
 X['employment'] = X['employment'].apply(lambda x: 1 if x == '4<=X<7' or x == '>=7' else 0).astype(int)
 
 X = X.reset_index(drop=True)
-X.to_csv(os.path.join("..", "data", "german_credit", "features.csv"), index=False)
+X.to_csv(os.path.join(german_credit_dir, "features.csv"), index=False)
 
 # label encode the target variable to have the classes 0 and 1
 y = LabelEncoder().fit_transform(y)
 y = pd.DataFrame(y)
 y = y.rename(columns={0: "Y"})
-y.to_csv(os.path.join("..", "data", "german_credit", "labels.csv"), index=False)
+y.to_csv(os.path.join(german_credit_dir, "labels.csv"), index=False)
 
-print("Processed German Credit dataset!")
+print("="*5, "Processed German Credit dataset!", "="*5)
