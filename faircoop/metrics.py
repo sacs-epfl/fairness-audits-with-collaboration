@@ -69,6 +69,8 @@ def demographic_parity_unbiased_independent(features, labels, attr, all_probs, a
     return dp_final
 
 # without independence assumption i.e. P(C1/C0) != P(C1); uses compute_subspace_probabilities to generate meta files
+# unbiased estimation of mean for stratified sampling
+# Reference: https://home.iitk.ac.in/~shalab/sampling/chapter4-sampling-stratified-sampling.pdf
 def demographic_parity_unbiased(
         features, labels, attr, all_probs, all_ys, \
         other_attrs, protected_attributes, dataset_size: int):
