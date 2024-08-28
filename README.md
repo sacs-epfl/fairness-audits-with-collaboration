@@ -2,7 +2,7 @@
 
 This repository hosts the code for our work titled *"Fairness Auditing with Multi-agent Collaboration"* which will appear in the *Proceedings of the 27th European Conference on Artificial Intelligence (ECAI), 2024*.
 
-# Setting up the python environment
+## Setting up the python environment
 
 Create a new conda environment using the provided `environment.yml` file.
 
