@@ -39,9 +39,8 @@ if __name__ == "__main__":
     else:
         args.unbias_mean = False
 
-    if args.dataset not in ["synthetic", "german_credit", "propublica", "folktables"]:
+    if args.dataset not in ["german_credit", "propublica", "folktables"]:
         raise RuntimeError("Unknown dataset %s" % args.dataset)
-
 
     if args.dataset == "german_credit":
         protected_attributes = ['age', 'sex', 'marital_status', 'own_telephone', 'employment']

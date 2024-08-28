@@ -12,7 +12,7 @@ else
     oversample=""
 fi
 
-python /home/dhasade/audits/ml-audits/run_multi_colab_granular.py \
+python run_multi_colab_granular.py \
     --dataset folktables \
     --sample $sample \
     --collaboration $collaboration \

@@ -1,6 +1,6 @@
-# ml-audits
+# Fairness Auditing with Multi-Agent Collaboration
 
-This repository hosts the code for our work on multi-agent collaborative auditing.
+This repository hosts the code for our work titled *"Fairness Auditing with Multi-agent Collaboration"* which will appear in the *Proceedings of the 27th European Conference on Artificial Intelligence (ECAI), 2024*.
 
 # Setting up the python environment
 
@@ -56,7 +56,7 @@ python scripts/preprocess_folk_tables.py
 
 After running the script, you should have the final preprocessed dataset as `data/folktables/features_bin.csv` and `data/folktables/labels_bin.csv`.
 
-## Confirm download of datasets
+## Analyzing datasets to generate meta files (and ensure correct preprocessing)
 
 We require additional information about the datasets to run our main experiments.
 This information includes strata sizes, ground truth demographic parity, etc.
@@ -80,14 +80,37 @@ scripts/two_agent.sh
 
 You can modify the script to change the `dataset`. Please set the number of `repetitions` depending upon the chosen dataset as indicated in the script. These repetitions are chosen considering the size of the dataset (i.e. corresponding run time) as well as the accuracy of estimation. You must also set the `attrs_to_audit` variable depending upon the dataset as indicated in the script.
 
-# Steps-to-run
+# Running multi-agent collaboration (Figure 4 and 5)
 
-1. Ensure that you have dataset files in the `data` folder. These should go as `data/<dataset_name>/features.csv` and `data/<dataset_name>/labels.csv` where `<dataset_name>` could be one of `folktables`, `german_credit`, `propublica` or `synthetic`. 
-2. Run `analyze_dataset.py` by updating the `DATASETS = [...]` list to include the dataset names you want to analyze. This step is important as it will generate the required probabilities for debiasing, saved as `data/<dataset_name>/all_probs.pkl` and `data/<dataset_name>/all_ys.pkl`.
-3. To generate gain plots, you will have to launch `run_multi_colab.py` as follows:
+We provide scripts for each dataset in `scripts/multicolab/<dataset>_launcher.sh`. The script takes 3 arguments: sampling method, collaboration strategy and number of collaborating agents $k$ (should be between >= 2 and <= 5).
+
+```bash
+# Run from root directory
+scripts/multicolab/german_credit_launcher.sh stratified apriori 3
+```
+
+The results are saved in the `results/<dataset>/multicolab` folder. For each choice of $k$, there exist $5 \choose k$ possible combinations of agents. The filename reports the chosen combination of agents along with the number of agents $k$.
+
+# Evaluating observation 1 (Figure 2)
+
+Lastly, we also provide a script for generating the data for Observation 1 in the paper. This script utilizes previously generated meta files, specifically the `data/<dataset_name>/all_nks.pkl` which save the sizes for each strata. 
+
+```python
+# Run from root directory
+python scripts/analyze_strata.py
+```
+
+The resulting plot is saved as `results/plots/largest_stratum.pdf`.
+
+## Citation
+
+If you found this code useful, please consider citing our paper:
 
 ```
-python run_multi_colab.py --repetitions 500 --dataset <dataset_name>  --seed 112 --oversample --sample stratified --collaboration <collab_type> --budget 200
+@article{de2024fairness,
+  title={Fairness auditing with multi-agent collaboration},
+  author={de Vos, Martijn and Dhasade, Akash and Bourr{\'e}e, Jade Garcia and Kermarrec, Anne-Marie and Merrer, Erwan Le and Rottembourg, Benoit and Tredan, Gilles},
+  journal={arXiv preprint arXiv:2402.08522},
+  year={2024}
+}
 ```
-
-where `<collab_type>` could be one of `none`, `aposteriori` or `apriori`. The result files will be generated in `results/<dataset_name>/multicolab_b<budget>`.
